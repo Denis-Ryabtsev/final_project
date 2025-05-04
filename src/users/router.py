@@ -6,9 +6,10 @@ from users.config_token import auth_backend
 from users.schemas import (
     UserRegistration, MessageResponse, UserCreate, UserInformation, UserChange, UserRead
 )
-from users.models import User
+from users.models import RoleType, User
 from users.service import UserService
 from users.depencies import get_user_service
+from core_depencies import check_role
 from database import get_session
 
 
@@ -18,15 +19,16 @@ operation_user = APIRouter(prefix='/users', tags=['User operations'])
 
 @registration_router.post('', response_model=MessageResponse)
 async def reg_user(
-    data: UserRegistration, service: UserService = Depends(get_user_service)
+    data: UserRegistration, 
+    service: UserService = Depends(get_user_service), 
+    session: AsyncGenerator = Depends(get_session)
 ) -> MessageResponse:
 
-    user = UserCreate(**data.model_dump())
-    await service.register_user(user)
+    await service.register_user(session, data)
 
     return MessageResponse(message="Пользователь успешно зарегистрирован")
 
-@operation_user.get('', response_model=UserInformation)
+@operation_user.get('/me', response_model=UserInformation)
 async def get_user(
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
@@ -36,19 +38,19 @@ async def get_user(
 
     return my_profile
 
-@operation_user.patch('', response_model=UserRead)
+@operation_user.patch('/me', response_model=UserInformation)
 async def change_user(
     data: UserChange,
     session: AsyncGenerator = Depends(get_session),
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
-) -> UserRead:
+) -> UserInformation:
     
     result = await service.change_user(session, user, data)
 
     return result
 
-@operation_user.delete('', status_code=status.HTTP_204_NO_CONTENT)
+@operation_user.delete('/me', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     response: Response,
     session: AsyncGenerator = Depends(get_session),
@@ -57,3 +59,28 @@ async def delete_user(
 ):
     await service.delete_user(session, user)
     response.delete_cookie('project')
+
+@operation_user.patch('/{user_id}/role', response_model=UserInformation)
+async def change_role(
+    user_id: int,
+    role: RoleType,
+    session: AsyncGenerator = Depends(get_session),
+    user: User = Depends(check_role),
+    service: UserService = Depends(get_user_service)
+) -> UserInformation:
+    
+    result = await service.change_role(session, user, user_id, role)
+
+    return UserInformation.model_validate(result)
+
+@operation_user.patch('/{user_id}/department', response_model=UserInformation)
+async def delete_department(
+    user_id: int,
+    session: AsyncGenerator = Depends(get_session),
+    user: User = Depends(check_role),
+    service: UserService = Depends(get_user_service)
+) -> UserInformation:
+    
+    result = await service.delete_department(session, user, user_id)
+
+    return UserInformation.model_validate(result)
