@@ -8,9 +8,11 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from database import Base
 
 
+
 if TYPE_CHECKING:
     from company.models.company import Company
     from company.models.department import Department
+    from news.models import News
 
 class RoleType(enum.Enum):
     employee = 'employee'
@@ -45,6 +47,7 @@ class User(SQLAlchemyBaseUserTable, Base):
     department: Mapped[Optional['Department']] = relationship(
         back_populates='users', passive_deletes=True, foreign_keys=[department_id]
     )
+    news: Mapped[list['News']] = relationship(back_populates='authors', cascade="all, delete-orphan")
 
     __table_args__ = (
         Index('idx_email', 'email'),
