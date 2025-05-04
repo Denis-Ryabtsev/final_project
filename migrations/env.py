@@ -9,12 +9,15 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
+from company.models.company import Company
+from company.models.department import Department
 from users.models import User
-from config import setting
+from config import get_setting
 from database import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
+setting = get_setting()
 config = context.config
 config.set_main_option(
     'sqlalchemy.url', f"postgresql+psycopg2://{setting.DB_POSTGRES_USER}:"\
