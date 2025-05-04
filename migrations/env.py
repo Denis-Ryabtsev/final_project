@@ -11,7 +11,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 from company.models.company import Company
 from company.models.department import Department
+
 from users.models import User
+from news.models import News
 from config import get_setting
 from database import Base
 
