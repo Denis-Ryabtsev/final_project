@@ -10,10 +10,17 @@ class UserRegistration(BaseModel):
         example='Иван', description='Введите свое имя', min_length=2, alias='name'
     )
     last_name: str = Field(
-        example='Васильев', description='Введите свою фамилию', min_length=2, alias='surname'
+        example='Васильев', description='Введите свою фамилию', 
+        min_length=2, alias='surname'
     )
-    role: RoleType
-    email: EmailStr = Field(example='user@mail.ru')
+    company_role: RoleType = Field(alias='role')
+    company_code: Optional[str] = Field(
+        None, example='aaaa', description='Введите код компании', 
+        min_length=4, max_length=4, alias='code'
+    )
+    email: EmailStr = Field(
+        example='user@mail.ru'
+    )
     password: str = Field(
         description='Пароль должен состоять минимум из 6 символов', min_length=6
     )
@@ -30,7 +37,9 @@ class UserRegistration(BaseModel):
 class UserCreate(schemas.BaseUserCreate):
     first_name: str
     last_name: str
-    role: RoleType
+    company_role: RoleType
+    company_id: Optional[int] = None
+    department_id: Optional[int] = None
     email: EmailStr
     password: str 
 
@@ -42,20 +51,27 @@ class MessageResponse(BaseModel):
 class UserInformation(BaseModel):
     first_name: str
     last_name: str
-    role: RoleType
+    company_role: RoleType
+    company_id: Optional[int] = None
+    department_id: Optional[int] = None
+
+    model_config = {
+        'from_attributes': True
+    }
 
 
 class UserChange(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    role: Optional[RoleType] = None
+    company_role: Optional[RoleType] = None
     email: Optional[EmailStr] = None
+    company_code: Optional[str] = None
 
 
 class UserRead(BaseModel):
     first_name: str
     last_name: str
-    role: RoleType
+    companrole: RoleType
     email: EmailStr
 
     model_config = {
