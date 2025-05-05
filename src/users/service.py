@@ -64,7 +64,6 @@ class UserService:
         for k, v in data.items():
             setattr(user, k, v)
 
-        session.add(user)
         await session.commit()
         await session.refresh(user)
         return user
@@ -94,7 +93,6 @@ class UserService:
             )
         
         target_user.company_role = role
-        session.add(target_user)
         await session.commit()
         await session.refresh(target_user)
 
@@ -127,7 +125,6 @@ class UserService:
             )
         
         target_user.department_id = None
-        session.add(target_user)
         await session.commit()
         await session.refresh(target_user)
 
