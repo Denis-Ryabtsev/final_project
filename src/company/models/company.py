@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from users.models import User
     from company.models.department import Department
     from news.models import News
+    from tasks.models.task import Task
     
 class Company(Base):
     __tablename__ = 'company'
@@ -29,7 +30,12 @@ class Company(Base):
     departments: Mapped[list['Department']] = relationship(
         back_populates='company', cascade="all, delete-orphan"
     )
-    news: Mapped[list['News']] = relationship(back_populates='company', cascade="all, delete-orphan")
+    news: Mapped[list['News']] = relationship(
+        back_populates='company', cascade="all, delete-orphan"
+    )
+    task: Mapped[list['Task']] = relationship(
+        back_populates='company', cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         Index('idx_code', 'company_code'),
