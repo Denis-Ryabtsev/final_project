@@ -100,7 +100,6 @@ class DepartmentService:
             target_user.department_id = target_department.id
             old_user.department_id = None
             
-            session.add_all([target_department, target_user, old_user])
             await session.commit()
             await session.refresh(target_department)
             await session.refresh(target_user)
