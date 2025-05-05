@@ -6,13 +6,15 @@ from sqlalchemy import Boolean, String, Enum, Index, Integer, ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from database import Base
-
+from tasks.models.comment import Comment
 
 
 if TYPE_CHECKING:
     from company.models.company import Company
     from company.models.department import Department
     from news.models import News
+    from tasks.models.task import Task
+    # from tasks.models.comment import Comment
 
 class RoleType(enum.Enum):
     employee = 'employee'
@@ -41,13 +43,27 @@ class User(SQLAlchemyBaseUserTable, Base):
     is_superuser: Mapped[bool] = mapped_column(default=False, nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
 
+
+
     company: Mapped['Company'] = relationship(
         back_populates='users', passive_deletes=True
     )
     department: Mapped[Optional['Department']] = relationship(
         back_populates='users', passive_deletes=True, foreign_keys=[department_id]
     )
-    news: Mapped[list['News']] = relationship(back_populates='authors', cascade="all, delete-orphan")
+    news: Mapped[list['News']] = relationship(
+        back_populates='authors', cascade="all, delete-orphan"
+    )
+    owner_task: Mapped[list['Task']] = relationship(
+        back_populates='owner', cascade="all, delete-orphan", foreign_keys='Task.owner_id'
+    )
+    target_task: Mapped[list['Task']] = relationship(
+        back_populates='target', cascade="all, delete-orphan", foreign_keys='Task.target_id'
+    )
+    comments: Mapped[list['Comment']] = relationship(
+        back_populates='user', cascade="all, delete-orphan", lazy="selectin", foreign_keys="Comment.author_id"
+    )
+
 
     __table_args__ = (
         Index('idx_email', 'email'),
