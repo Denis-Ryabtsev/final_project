@@ -15,3 +15,8 @@ def check_role(
         )
     
     return user
+
+def get_user(
+    user: User = Depends(fastapi_users.current_user())
+):
+    return user
