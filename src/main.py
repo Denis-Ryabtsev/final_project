@@ -4,6 +4,8 @@ from users.router import registration_router, auth_router, operation_user
 from company.router.company import company_router
 from company.router.department import department_router
 from news.router import news_router
+from tasks.router.task import task_router
+from tasks.router.comment import comment_router
 
 
 app = FastAPI(
@@ -16,3 +18,5 @@ app.include_router(operation_user)
 app.include_router(company_router)
 app.include_router(department_router)
 app.include_router(news_router)
+app.include_router(task_router)
+app.include_router(comment_router)
