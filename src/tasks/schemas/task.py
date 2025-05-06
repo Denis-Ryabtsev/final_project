@@ -40,3 +40,7 @@ class TaskChange(BaseModel):
 
 class TaskChangeRole(BaseModel):
     status: TaskStatus
+
+
+class TaskResponse(BaseModel):
+    message: str
