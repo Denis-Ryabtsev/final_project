@@ -10,6 +10,7 @@ from users.models import RoleType, User
 from users.service import UserService
 from users.depencies import get_user_service
 from core_depencies import check_role
+from rating.schemas import AvgRatingRead, RatingReadUser
 from database import get_session
 
 
@@ -84,3 +85,21 @@ async def delete_department(
     result = await service.delete_department(session, user, user_id)
 
     return UserInformation.model_validate(result)
+
+@operation_user.get('/my_rating', response_model=list[RatingReadUser])
+async def get_rating(
+    user: User = Depends(get_user),
+    session: AsyncGenerator = Depends(get_session),
+    service: UserService = Depends(get_user_service)
+):
+    result = await service.get_rating(session, user)
+
+    return [RatingReadUser.model_validate(item) for item in result]
+
+@operation_user.get("/my_avg_rating", response_model=AvgRatingRead)
+async def get_quarter_avg(
+    user: User = Depends(get_user),
+    session: AsyncGenerator = Depends(get_session),
+    service: UserService = Depends(get_user_service)
+):
+    return await service.get_avg_rating(session, user)
