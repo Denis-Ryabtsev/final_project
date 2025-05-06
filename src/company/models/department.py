@@ -21,8 +21,8 @@ class Department(Base):
         ForeignKey('user.id', use_alter=True, deferrable=True), nullable=False
     )
 
-    users: Mapped[list['User']] = relationship(
-        back_populates='department', passive_deletes=True, foreign_keys='User.department_id'
-    )
-    company: Mapped['Company'] = relationship(back_populates='departments')
-    head_user: Mapped['User'] = relationship(foreign_keys=[head_user_id], lazy='selectin')
+    # users: Mapped[list['User']] = relationship(
+    #     back_populates='department', passive_deletes=True, foreign_keys='User.department_id'
+    # )
+    # company: Mapped['Company'] = relationship(back_populates='departments')
+    # head_user: Mapped['User'] = relationship(foreign_keys=[head_user_id], lazy='selectin')

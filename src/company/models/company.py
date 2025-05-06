@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from company.models.department import Department
     from news.models import News
     from tasks.models.task import Task
+    from meeting.models import Meeting
     
 class Company(Base):
     __tablename__ = 'company'
@@ -24,18 +25,22 @@ class Company(Base):
     company_code: Mapped[str] = mapped_column(String(4), nullable=False)
     admin_code: Mapped[str] = mapped_column(String(6), nullable=False)
 
-    users: Mapped[list['User']] = relationship(
-        back_populates='company', cascade="all, delete-orphan"
-    )
-    departments: Mapped[list['Department']] = relationship(
-        back_populates='company', cascade="all, delete-orphan"
-    )
-    news: Mapped[list['News']] = relationship(
-        back_populates='company', cascade="all, delete-orphan"
-    )
-    task: Mapped[list['Task']] = relationship(
-        back_populates='company', cascade="all, delete-orphan"
-    )
+#     users: Mapped[list['User']] = relationship(
+#         back_populates='company', cascade="all, delete-orphan"
+#     )
+#     departments: Mapped[list['Department']] = relationship(
+#         back_populates='company', cascade="all, delete-orphan"
+#     )
+#     news: Mapped[list['News']] = relationship(
+#         back_populates='company', cascade="all, delete-orphan"
+#     )
+#     task: Mapped[list['Task']] = relationship(
+#         back_populates='company', cascade="all, delete-orphan"
+#     )
+
+#     meetings: Mapped[list["Meeting"]] = relationship(
+#     back_populates="company", cascade="all, delete-orphan"
+# )
 
     __table_args__ = (
         Index('idx_code', 'company_code'),
