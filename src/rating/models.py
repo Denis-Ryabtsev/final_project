@@ -30,13 +30,13 @@ class Rating(Base):
     score_complete: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[datetime.date] = mapped_column(default=datetime.date.today)
 
-    employee: Mapped["User"] = relationship(
-    foreign_keys=[owner_id],
-    back_populates="received_ratings"
-    )
+    # employee: Mapped["User"] = relationship(
+    # foreign_keys=[owner_id],
+    # back_populates="received_ratings"
+    # )
 
-    evaluator: Mapped["User"] = relationship(
-        foreign_keys=[head_id],
-        back_populates="given_ratings"
-    )
-    task: Mapped["Task"] = relationship(back_populates="ratings")
+    # evaluator: Mapped["User"] = relationship(
+    #     foreign_keys=[head_id],
+    #     back_populates="given_ratings"
+    # )
+    # task: Mapped["Task"] = relationship(back_populates="ratings")
