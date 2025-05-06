@@ -16,6 +16,7 @@ from users.models import User
 from news.models import News
 from tasks.models.task import Task
 from tasks.models.comment import Comment
+from rating.models import Rating
 from config import get_setting
 from database import Base
 
