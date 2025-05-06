@@ -17,6 +17,8 @@ from news.models import News
 from tasks.models.task import Task
 from tasks.models.comment import Comment
 from rating.models import Rating
+from calendars.models import Calendar
+from meeting.models import Meeting
 from config import get_setting
 from database import Base
 
