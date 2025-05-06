@@ -6,6 +6,7 @@ from company.router.department import department_router
 from news.router import news_router
 from tasks.router.task import task_router
 from tasks.router.comment import comment_router
+from rating.router import rating_router
 
 
 app = FastAPI(
@@ -20,3 +21,4 @@ app.include_router(department_router)
 app.include_router(news_router)
 app.include_router(task_router)
 app.include_router(comment_router)
+app.include_router(rating_router)
