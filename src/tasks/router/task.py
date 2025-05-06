@@ -7,7 +7,7 @@ from users.schemas import UserInformation
 from company.schemas.company import CompanyRead, CompanyCreate
 from tasks.depencies import check_company
 from company.service.company import CompanyService
-from tasks.schemas.task import TaskRead, TaskCreate, TaskChange, TaskChangeRole
+from tasks.schemas.task import TaskRead, TaskCreate, TaskChange, TaskChangeRole, TaskResponse
 from core_depencies import check_role, get_user
 from tasks.service.task import TaskService
 from tasks.models.task import TaskStatus
@@ -26,7 +26,11 @@ async def create_task(
     service: TaskService = Depends(get_task_service)
 ):
     result = await service.create_task(user, session, data)
-    return TaskRead.model_validate(result)
+    await service.add_task_calendar(session, result)
+    
+    return TaskRead(**result)
+    # return TaskRead.model_validate(result)
+    # return TaskResponse(message='Задача создана успешно')
 
 @task_router.delete('/{task_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
