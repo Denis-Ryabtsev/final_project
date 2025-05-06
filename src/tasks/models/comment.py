@@ -27,7 +27,7 @@ class Comment(Base):
     description: Mapped[str] = mapped_column(String(1024), nullable=False)
 
     
-    user: Mapped['User'] = relationship(back_populates='comments')
-    task: Mapped['Task'] = relationship(
-        back_populates='comment'
-    )
+    # user: Mapped['User'] = relationship(back_populates='comments')
+    # task: Mapped['Task'] = relationship(
+    #     back_populates='comment'
+    # )
