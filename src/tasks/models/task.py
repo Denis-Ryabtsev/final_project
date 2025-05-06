@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from users.models import User
     from tasks.models.comment import Comment
     from company.models.company import Company
+    from rating.models import Rating
 
 class TaskStatus(enum.Enum):
     todo = 'todo'
@@ -50,6 +51,9 @@ class Task(Base):
     comment: Mapped[list['Comment']] = relationship(
         back_populates='task', cascade='all, delete-orphan'
     )
-
+    ratings: Mapped[list["Rating"]] = relationship(
+    back_populates="task",
+    cascade="all, delete-orphan"
+)
 
 
