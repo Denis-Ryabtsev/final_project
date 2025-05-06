@@ -1,13 +1,17 @@
+from datetime import datetime
 from typing import AsyncGenerator
 
 from fastapi import HTTPException, status
 from fastapi_users.exceptions import UserAlreadyExists
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
+from rating.schemas import AvgRatingRead
 from users.schemas import UserCreate, UserChange, UserRegistration
 from company.models.department import Department
 from users.models import RoleType, User
 from company.models.company import Company
+from rating.models import Rating
 
 
 class UserService:
@@ -129,3 +133,38 @@ class UserService:
         await session.refresh(target_user)
 
         return target_user
+    
+    async def get_rating(self, session: AsyncGenerator, user: User) -> list[Rating]:
+        query = (
+            select(Rating)
+            .options(selectinload(Rating.evaluator), selectinload(Rating.task))
+            .where(Rating.owner_id == user.id)
+        )
+        result = await session.execute(query)
+        return result.scalars().all()
+    
+    async def get_avg_rating(
+        self, session: AsyncGenerator, user: User
+):
+        # Определяем начало текущего квартала
+        today = datetime.utcnow().date()
+        quarter = (today.month - 1) // 3 + 1
+        quarter_start_month = 3 * (quarter - 1) + 1
+        quarter_start = datetime(today.year, quarter_start_month, 1).date()
+
+        # Строим запрос
+        query = (
+            select(
+                func.avg(Rating.score_date).label("avg_date"),
+                func.avg(Rating.score_quality).label("avg_quality"),
+                func.avg(Rating.score_complete).label("avg_complete"),
+            )
+            .where(
+                Rating.owner_id == user.id,
+                Rating.created_at >= quarter_start,
+            )
+        )
+
+        result = await session.execute(query)
+        row = result.mappings().first() or {}
+        return AvgRatingRead(**row)
