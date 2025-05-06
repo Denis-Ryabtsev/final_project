@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from news.models import News
     from tasks.models.task import Task
     # from tasks.models.comment import Comment
+    from rating.models import Rating
 
 class RoleType(enum.Enum):
     employee = 'employee'
@@ -64,6 +65,18 @@ class User(SQLAlchemyBaseUserTable, Base):
         back_populates='user', cascade="all, delete-orphan", lazy="selectin", foreign_keys="Comment.author_id"
     )
 
+    received_ratings: Mapped[list["Rating"]] = relationship(
+        back_populates="employee",
+        foreign_keys="Rating.owner_id",
+        cascade="all, delete-orphan"
+    )
+
+    # Все оценки, которые выставил этот пользователь
+    given_ratings: Mapped[list["Rating"]] = relationship(
+        back_populates="evaluator",
+        foreign_keys="Rating.head_id",
+        cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         Index('idx_email', 'email'),
