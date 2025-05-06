@@ -24,5 +24,5 @@ class News(Base):
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(1024), nullable=False)
 
-    authors: Mapped['User'] = relationship(back_populates='news')
-    company: Mapped['Company'] = relationship(back_populates='news')
+    # authors: Mapped['User'] = relationship(back_populates='news')
+    # company: Mapped['Company'] = relationship(back_populates='news')
