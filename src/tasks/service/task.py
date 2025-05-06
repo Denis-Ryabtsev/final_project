@@ -8,6 +8,7 @@ from users.models import User
 from company.schemas.department import DepartmentCreate
 from company.models.department import Department
 from tasks.models.task import Task
+from calendars.models import CalendarStatus, Calendar
 # from company.depencies import check_role
 
 
@@ -38,19 +39,56 @@ class TaskService:
                 'title': data.title,
                 'description': data.description
             }
+            
             task = Task(**task)
             session.add(task)
             await session.commit()
             await session.refresh(task)
 
-            return task
+            task_data = {
+                'id': task.id,
+                "owner_id": task.owner_id,
+                "company_id": task.company_id,
+                "target_id": task.target_id,
+                "start_date": task.start_date,
+                "end_date": task.end_date,
+                "title": task.title,
+                "description": task.description,
+                "status": task.status,
+            }
+
+            return task_data
+
+            # return task
 
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e)
             )
-        
+    
+    async def add_task_calendar(
+        self, session, task: Task
+    ):
+        try:
+            calendar = {
+                    'user_id': task['target_id'],
+                    'event_date': task['end_date'],
+                    'title': task['title'],
+                    'type_event': CalendarStatus.task,
+                    'task_id': task['id']
+            }
+            calendar = Calendar(**calendar)
+            session.add(calendar)
+            await session.commit()
+            await session.refresh(calendar)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(e)
+            )
+    
+
     async def delete_task(
         self, user, task_id, session
     ):
