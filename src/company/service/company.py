@@ -1,19 +1,36 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 from sqlalchemy import select
 
 from users.models import User
 from company.schemas.company import CompanyCreate, CompanyRead
 from company.models.company import Company
-# from company.depencies import check_role
 
 
 class CompanyService:
+    """
+        Сервисный слой для работы с компанией:
+            - создание компании
+            - добавление пользователей в компанию
+            - удаление пользователей из команды
+            - удаления компании
+    """
 
     async def create_company(
         self, session: AsyncGenerator, data: CompanyCreate
-    ):
+    ) -> Union[Company, HTTPException]:
+        """
+            Создание компании.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                data (CompanyCreate): Входные данные для создания компании.
+
+            Returns:
+                (CompanyRead): Схема для отображения данных компании.
+        """
+
         query = select(Company).where(Company.name == data.name)
         result = (await session.execute(query)).scalars().first()
 
@@ -37,7 +54,19 @@ class CompanyService:
         
     async def add_user(
         self, session: AsyncGenerator, company_id: int, user_id: int
-    ):
+    ) -> Union[User, HTTPException]:
+        """
+            Добавление пользователей.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                company_id (int): Идентификатор компании
+                user_id (int): Идентификатор пользователя
+
+            Returns:
+                user (User): Объект пользователя.
+        """
+
         company = await session.get(Company, company_id)
         if not company:
             raise HTTPException(
@@ -66,7 +95,19 @@ class CompanyService:
     
     async def delete_user(
         self, session: AsyncGenerator, company_id: int, user_id: int
-    ):
+    ) -> Union[User, HTTPException]:
+        """
+            Удаление пользователей из компании.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                company_id (int): Идентификатор компании
+                user_id (int): Идентификатор пользователя
+
+            Returns:
+                user (User): Объект пользователя.
+        """
+
         company = await session.get(Company, company_id)
         if not company:
             raise HTTPException(
@@ -95,7 +136,15 @@ class CompanyService:
         
     async def delete_company(
         self, session: AsyncGenerator, company_id: int
-    ):
+    ) -> Union[None, HTTPException]:
+        """
+            Удаление компании.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                company_id (int): Идентификатор компании
+        """
+
         company = await session.get(Company, company_id)
         if not company:
             raise HTTPException(

@@ -1,21 +1,39 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 from sqlalchemy import select
 
-from tasks.schemas.task import TaskChange
+from tasks.schemas.task import TaskChange, TaskCreate
 from users.models import User
-from company.schemas.department import DepartmentCreate
-from company.models.department import Department
-from tasks.models.task import Task
+from tasks.models.task import Task, TaskStatus
 from calendars.models import CalendarStatus, Calendar
-# from company.depencies import check_role
 
 
 class TaskService:
+    """
+        Сервисный слой для работы с задачами:
+            - создание задачи
+            - добавление задачи в календарь
+            - удаление задачи
+            - изменение данных задачи
+            - изменение статуса задачи
+    """
+
     async def create_task(
-        self, user, session, data
-    ):
+        self, user: User, session: AsyncGenerator, data: TaskCreate
+    ) -> Union[dict, HTTPException]:
+        """
+            Создание новой задачи.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                data (TaskCreate): Входные данные для создания задачи
+
+            Returns:
+                task_data (dict): Словарь созданной задачи.
+        """
+
         query = select(User).where(User.id == data.target_id)
         target_user = (await session.execute(query)).scalars().first()
         if not target_user:
@@ -59,8 +77,6 @@ class TaskService:
 
             return task_data
 
-            # return task
-
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -68,8 +84,16 @@ class TaskService:
             )
     
     async def add_task_calendar(
-        self, session, task: Task
-    ):
+        self, session: AsyncGenerator, task: Task
+    ) -> Union[None, HTTPException]:
+        """
+            Добавление задачи в календарь пользователя.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                task (Task): Объект задачи.
+        """
+
         try:
             calendar = {
                     'user_id': task['target_id'],
@@ -82,16 +106,25 @@ class TaskService:
             session.add(calendar)
             await session.commit()
             await session.refresh(calendar)
+
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e)
             )
     
-
     async def delete_task(
-        self, user, task_id, session
-    ):
+        self, user: User, task_id: int, session: AsyncGenerator
+    ) -> Union[None, HTTPException]:
+        """
+            Удаление задачи.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                task_id (int): Идентификатор задачи
+                session (AsyncGenerator): SQLAlchemy-сессия.
+        """
+
         query = select(Task).where(Task.id == task_id)
         target_task = (await session.execute(query)).scalars().first()
         if not target_task:
@@ -115,8 +148,21 @@ class TaskService:
             )
         
     async def change_task(
-        self, user, session, data: TaskChange, task_id
-    ):
+        self, user: User, session: AsyncGenerator, data: TaskChange, task_id: int
+    ) -> Union[Task, HTTPException]:
+        """
+            Изменение задачи.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                data (TaskChange): Входные данные для изменения задачи
+                task_id (int): Идентификатор задачи
+
+            Returns:
+                target_task (Task): Объект задачи.
+        """
+
         query = select(Task).where(Task.id == task_id)
         target_task = (await session.execute(query)).scalars().first()
         if not target_task:
@@ -129,6 +175,7 @@ class TaskService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f'Задача не из твоей команды'
             )
+        
         try:
             task = data.model_dump(exclude_unset=True)
             for k, v in task.items():
@@ -146,8 +193,21 @@ class TaskService:
             )
     
     async def change_task_role(
-        self, user, session, task_id, task_status
-    ):
+        self, user: User, session: AsyncGenerator, task_id: int, task_status: TaskStatus
+    ) -> Union[Task, HTTPException]:
+        """
+            Изменение статуса задачи.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                task_id (int): Идентификатор задачи
+                task_status (TaskStatus): Тип статуса задачи
+
+            Returns:
+                target_task (Task): Объект задачи.
+        """
+
         query = select(Task).where(Task.id == task_id)
         target_task = (await session.execute(query)).scalars().first()
         if not target_task:

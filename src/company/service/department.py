@@ -1,19 +1,37 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 from sqlalchemy import select
 
 from users.models import User
 from company.schemas.department import DepartmentCreate
 from company.models.department import Department
-# from company.depencies import check_role
 
 
 class DepartmentService:
+    """
+        Сервисный слой для работы с отделами:
+            - создание отделов
+            - смена руководителя отдела
+            - удаление отдела
+    """
 
     async def create_department(
         self, session: AsyncGenerator, user: User, company_id: int, data: DepartmentCreate
-    ):
+    ) -> Union[Department, HTTPException]:
+        """
+            Создание отделов.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+                company_id (int): Идентификатор компании
+                data (DepartmentCreate): Входные данные для создания отделов
+
+            Returns:
+                new_department (Department): Объект отдела.
+        """
+
         if user.company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -65,7 +83,21 @@ class DepartmentService:
     async def change_head_user(
         self, session: AsyncGenerator, user: User, 
         company_id: int, department_id: int, user_id: int
-    ):
+    ) -> Union[Department, HTTPException]:
+        """
+            Смена руководителя отдела.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+                company_id (int): Идентификатор компании
+                department_id (int): Идентификатор отдела
+                user_id (int): Идентификатор пользователя
+
+            Returns:
+                target_department (Department): Объект отдела.
+        """
+
         if user.company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -115,7 +147,17 @@ class DepartmentService:
     async def delete_department(
         self, session: AsyncGenerator, user: User, 
         company_id: int, department_id: int
-    ):
+    ) -> Union[None, HTTPException]:
+        """
+            Удаление отдела.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+                company_id (int): Идентификатор компании
+                department_id (int): Идентификатор отдела
+        """
+
         if user.company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

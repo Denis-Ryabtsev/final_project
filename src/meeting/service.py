@@ -1,28 +1,38 @@
-import datetime
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
-from fastapi import HTTPException, status, Depends
-from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from fastapi import HTTPException, status
+from sqlalchemy import select
 
-from users.schemas import UserInformation
-from tasks.schemas.task import TaskChange
 from users.models import User
-from company.schemas.department import DepartmentCreate
-from company.models.department import Department
-from tasks.models.task import Task, TaskStatus
-from rating.models import Rating
-from rating.schemas import AvgRatingRead
 from meeting.schemas import MeetingCreate, MeetingChange
 from meeting.models import Meeting
 from calendars.models import Calendar, CalendarStatus
-# from company.depencies import check_role
 
 
 class MeetingService:
+    """
+        Сервисный слой для работы со встречами:
+            - создание встреч
+            - удаление встреч
+            - изменение встреч
+            - добавление пользователей на встречу
+    """
+
     async def create_meeting(
         self, user: User, session: AsyncGenerator, data: MeetingCreate
-    ):
+    ) -> Union[Meeting, HTTPException]:
+        """
+            Создаёт новую встречу.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                data (MeetingCreate): Входныеы данные для создания встречи
+
+            Returns:
+                target_meeting (Meeting): Объект встречи.
+        """
+
         target_meeting = data.model_dump()
         target_meeting['organizer_id'] = user.id
         target_meeting['company_id'] = user.company_id
@@ -42,7 +52,16 @@ class MeetingService:
         
     async def delete_meeting(
         self, user: User, session: AsyncGenerator, meeting_id: int
-    ):
+    ) -> Union[None, HTTPException]:
+        """
+            Удаление встречи.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                meeting_id (int): Идентификатор встречи
+        """
+
         query = select(Meeting).where(Meeting.id == meeting_id)
         target_meeting = (await session.execute(query)).scalars().first()
         if not target_meeting:
@@ -67,7 +86,20 @@ class MeetingService:
         
     async def change_meeting(
         self, user: User, session: AsyncGenerator, meeting_id: int, data: MeetingChange
-    ):
+    ) -> Union[Meeting, HTTPException]:
+        """
+            Изменение встречи.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                meeting_id (int): Идентификатор встречи
+                data (MeetingChange): Входные данные для изменения встречи
+                
+            Returns:
+                target_meeting (Meeting): Объект встречи.
+        """
+
         data = data.model_dump(exclude_unset=True)
         if not data.items():
             raise HTTPException(
@@ -103,8 +135,18 @@ class MeetingService:
             )
         
     async def add_user_meeting(
-        self, user: User, session: AsyncGenerator, meeting_id: int, user_id
-    ):
+        self, user: User, session: AsyncGenerator, meeting_id: int, user_id: int
+    ) -> Union[None, HTTPException]:
+        """
+            Добавление пользователей на встречу.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                meeting_id (int): Идентификатор встречи
+                user_id (int): Идентификатор пользователя
+        """
+
         query = select(Meeting).where(Meeting.id == meeting_id)
         target_meeting = (await session.execute(query)).scalars().first()
         if not target_meeting:
@@ -119,11 +161,6 @@ class MeetingService:
             )
         
         query = select(User).where(User.id == user_id)
-    #     query = (
-    # select(User)
-    # .options(selectinload(User.department), selectinload(User.company))
-    # .where(User.id == user_id)
-# )
         add_user = (await session.execute(query)).scalars().first()
         if not add_user:
             raise HTTPException(
@@ -163,8 +200,6 @@ class MeetingService:
             await session.commit()
             await session.refresh(data)
 
-            # return data
-            # return UserInformation.model_validate(add_user)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -4,9 +4,8 @@ from users.models import User, RoleType
 from users.manager import fastapi_users
 
 
-def check_role(
-    user: User = Depends(fastapi_users.current_user())
-):
+#   проверка роли пользователя перез работой эндпоинтов
+def check_role(user: User = Depends(fastapi_users.current_user())):
     if user.company_role != RoleType.admin:
         print(f'\n\n\n{user.company_role}\n\n\n')
         raise HTTPException(
@@ -16,7 +15,6 @@ def check_role(
     
     return user
 
-def get_user(
-    user: User = Depends(fastapi_users.current_user())
-):
+#   получение текущего авторизированного пользователя
+def get_user(user: User = Depends(fastapi_users.current_user())):
     return user

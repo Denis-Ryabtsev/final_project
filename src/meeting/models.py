@@ -1,21 +1,26 @@
 from datetime import date, time
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey, Index
+from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
 
 
-if TYPE_CHECKING:
-    from users.models import User
-    from tasks.models.comment import Comment
-    from company.models.company import Company
-    from rating.models import Rating
-    from calendars.models import Calendar
-
-
 class Meeting(Base):
+    """
+        Модель встреч компании
+    
+        Fields:
+        - id: Идентификатор встречи
+        - organizer_id: Идентификатор организатора встречи.
+        - company_id: Идентификатор компании.
+        - title: Заголовок встречи.
+        - description: Описание встречи.
+        - meeting_date: Дата встречи.
+        - meeting_time: Время встречи.
+    """
+
     __tablename__ = "meeting"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -33,10 +38,9 @@ class Meeting(Base):
     meeting_date: Mapped[date] = mapped_column(nullable=False)
     meeting_time: Mapped[time] = mapped_column(nullable=False)
 
-    # # ORM-связи
-    # organizer: Mapped["User"] = relationship(back_populates="organized_meetings")
-    # company: Mapped["Company"] = relationship(back_populates="meetings")
-
-    # calendar_event: Mapped[list["Calendar"]] = relationship(
-    #     back_populates="meeting", cascade="all, delete-orphan"
-    # )
+    #   настройка индексов
+    __table_args__ = (
+        Index('idx_meeting_company', 'company_id'),
+        Index('idx_meeting_organizer', 'organizer_id'),
+        Index('idx_meeting_date_time', 'meeting_date', 'meeting_time'),
+    )

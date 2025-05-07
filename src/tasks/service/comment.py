@@ -1,21 +1,37 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 from sqlalchemy import select
 
-from tasks.schemas.task import TaskChange
 from users.models import User
-from company.schemas.department import DepartmentCreate
-from company.models.department import Department
 from tasks.models.task import Task
 from tasks.models.comment import Comment
-# from company.depencies import check_role
+from tasks.schemas.comment import CommentCreate
 
 
 class CommentService:
+    """
+        Сервисный слой для работы с комментариями:
+            - создание комментариев
+            - удаление комментариев
+    """
+
     async def create_comment(
-        self, user, session, task_id, data
-    ):
+        self, user: User, session: AsyncGenerator, task_id: int, data: CommentCreate 
+    ) -> Union[Comment, HTTPException]:
+        """
+            Создаёт нового комментария.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                task_id (int): Идентификатор задачи
+                data (CommentCreate): Входные данные для создания комментария.
+            
+            Returns:
+                comment (Comment): Объект комментария.
+        """
+
         if not user.company_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -55,8 +71,17 @@ class CommentService:
             )
     
     async def delete_comment(
-        self, user, session, task_id, comment_id
-    ):
+        self, user: User, session: AsyncGenerator, task_id: int, comment_id: int
+    ) -> Union[None, HTTPException]:
+        """
+            Удаление комментария.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                task_id (int): Идентификатор задачи
+                comment_id (int): Идентификатор комментария.
+        """
 
         query = select(Task).where(Task.id == task_id)
         target_task = (await session.execute(query)).scalars().first()
@@ -70,6 +95,7 @@ class CommentService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f'Задача не из твоей команды'
             )
+        
         query = select(Comment).where(Comment.id == comment_id)
         target_comment = (await session.execute(query)).scalars().first()
         if not target_comment:
@@ -77,7 +103,6 @@ class CommentService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Комментарий с таким id {comment_id} не существует'
             )
-
 
         try:
             await session.delete(target_comment)

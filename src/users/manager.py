@@ -13,6 +13,7 @@ from database import get_session
 
 setting = get_setting()
 
+#   настрока менеджера пользователей для аутентификации
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = setting.SECRET
     verification_token_secret = setting.SECRET

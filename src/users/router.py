@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status, Response
 from users.manager import fastapi_users
 from users.config_token import auth_backend
 from users.schemas import (
-    UserRegistration, MessageResponse, UserCreate, UserInformation, UserChange, UserRead
+    UserRegistration, MessageResponse, UserInformation, UserChange
 )
 from users.models import RoleType, User
 from users.service import UserService
@@ -18,13 +18,25 @@ registration_router = APIRouter(prefix='/registration', tags=['Registration'])
 auth_router = fastapi_users.get_auth_router(auth_backend)
 operation_user = APIRouter(prefix='/users', tags=['User operations'])
 
+
 @registration_router.post('', response_model=MessageResponse)
 async def reg_user(
     data: UserRegistration, 
     service: UserService = Depends(get_user_service), 
     session: AsyncGenerator = Depends(get_session)
 ) -> MessageResponse:
+    """
+        Создаёт нового пользователя.
 
+        Args:
+            data (UserRegistration): Входные данные для создания пользователя.
+            service (UserService): Сервис для создания пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            
+        Returns:
+            MessageResponse: Сообщение об успешном выполнении.
+    """
+    
     await service.register_user(session, data)
 
     return MessageResponse(message="Пользователь успешно зарегистрирован")
@@ -34,6 +46,16 @@ async def get_user(
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
 ) -> Union[UserInformation, Exception]:
+    """
+        Получение информации о профиле.
+
+        Args:
+            user (User): Получение текущего пользователя.
+            service (UserService): Сервис для создания пользователя.
+            
+        Returns:
+            UserInformation: Информация о пользователе.
+    """
     
     my_profile = await service.get_user(user)
 
@@ -45,7 +67,19 @@ async def change_user(
     session: AsyncGenerator = Depends(get_session),
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
-) -> UserInformation:
+) -> Union[UserInformation, Exception]:
+    """
+        Получение информации о профиле.
+
+        Args:
+            data (UserChange): Входные данные для изменения пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            user (User): Получение текущего пользователя.
+            service (UserService): Сервис для создания пользователя.
+            
+        Returns:
+            UserInformation: Информация о пользователе.
+    """
     
     result = await service.change_user(session, user, data)
 
@@ -57,7 +91,18 @@ async def delete_user(
     session: AsyncGenerator = Depends(get_session),
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
-):
+) -> Union[None, Exception]:
+    """
+        Удаление пользователя.
+
+        Args:
+            response (Response): Ответ от сервера
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            user (User): Получение текущего пользователя.
+            service (UserService): Сервис для создания пользователя.
+            
+    """
+    
     await service.delete_user(session, user)
     response.delete_cookie('project')
 
@@ -68,7 +113,20 @@ async def change_role(
     session: AsyncGenerator = Depends(get_session),
     user: User = Depends(check_role),
     service: UserService = Depends(get_user_service)
-) -> UserInformation:
+) -> Union[UserInformation, Exception]:
+    """
+        Изменение роли пользователя админом.
+
+        Args:
+            user_id (int): Идентификатор пользователя
+            role (RoleType): Тип роли.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            user (User): Получение текущего пользователя.
+            service (UserService): Сервис для создания пользователя.
+            
+        Returns:
+            UserInformation: Информация о пользователе.
+    """
     
     result = await service.change_role(session, user, user_id, role)
 
@@ -80,26 +138,62 @@ async def delete_department(
     session: AsyncGenerator = Depends(get_session),
     user: User = Depends(check_role),
     service: UserService = Depends(get_user_service)
-) -> UserInformation:
-    
+) -> Union[UserInformation, Exception]:
+    """
+        Удаление отдела у пользователя.
+
+        Args:
+            user_id (int): Идентификатор пользователя
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            user (User): Получение текущего пользователя.
+            service (UserService): Сервис для создания пользователя.
+            
+        Returns:
+            UserInformation: Информация о пользователе.
+    """
+
     result = await service.delete_department(session, user, user_id)
 
     return UserInformation.model_validate(result)
 
-@operation_user.get('/my_rating', response_model=list[RatingReadUser])
+@operation_user.get('/me/rating', response_model=list[RatingReadUser])
 async def get_rating(
     user: User = Depends(get_user),
     session: AsyncGenerator = Depends(get_session),
     service: UserService = Depends(get_user_service)
-):
+) -> list[RatingReadUser]:
+    """
+        Получение оценок задач.
+
+        Args:
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (UserService): Сервис для создания пользователя.
+            
+        Returns:
+            RatingReadUser: Информация об оценках задач.
+    """
+
     result = await service.get_rating(session, user)
 
     return [RatingReadUser.model_validate(item) for item in result]
 
-@operation_user.get("/my_avg_rating", response_model=AvgRatingRead)
+@operation_user.get("/me/ratings/average", response_model=AvgRatingRead)
 async def get_quarter_avg(
     user: User = Depends(get_user),
     session: AsyncGenerator = Depends(get_session),
     service: UserService = Depends(get_user_service)
-):
+) -> AvgRatingRead:
+    """
+        Получение средних значений оценок задач.
+
+        Args:
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (UserService): Сервис для создания пользователя.
+            
+        Returns:
+            AvgRatingRead: Информация об средних оценках задач.
+    """
+
     return await service.get_avg_rating(session, user)

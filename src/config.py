@@ -2,7 +2,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-#   class, include enviroment data
+#   класс для инициализации переменных окружения
 class Setting(BaseSettings):
     DB_POSTGRES_HOST: str
     DB_POSTGRES_PORT: str
@@ -12,7 +12,7 @@ class Setting(BaseSettings):
 
     SECRET: str
 
-    #   property for get DSN link (for sqlalchemy)
+    #   метод для возврата ссылки подключения к БД в формате DSN
     @property
     def DB_POSTGRES_URL(self) -> str:
         return (
@@ -24,6 +24,6 @@ class Setting(BaseSettings):
         env_file=Path(__file__).resolve().parent.parent / '.env'
     )
 
-
+#   получение объекта класса
 def get_setting() -> Setting:
     return Setting()

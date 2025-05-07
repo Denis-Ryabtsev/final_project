@@ -1,24 +1,12 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 import enum
 
 from fastapi_users.db import SQLAlchemyBaseUserTable
-from sqlalchemy import Boolean, String, Enum, Index, Integer, ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import String, Enum, Index, ForeignKey
+from sqlalchemy.orm import mapped_column, Mapped
 
 from database import Base
-from tasks.models.comment import Comment
-from calendars.models import Calendar
 
-if TYPE_CHECKING:
-    from company.models.company import Company
-    from company.models.department import Department
-    from news.models import News
-    from tasks.models.task import Task
-    # from tasks.models.comment import Comment
-    from rating.models import Rating
-    
-    from meeting.models import Meeting
-    # from calendars.models import Calendar
     
 class RoleType(enum.Enum):
     employee = 'employee'
@@ -27,6 +15,23 @@ class RoleType(enum.Enum):
 
 
 class User(SQLAlchemyBaseUserTable, Base):
+    """
+        Модель пользователя системы
+    
+        Fields:
+        - id: Идентификатор пользователя
+        - first_name: Имя пользователя.
+        - last_name: Фамилия пользователя.
+        - company_role: Роль в компании.
+        - company_id: Идентификатор компании.
+        - department_id: Идентификатор отдела.
+        - email: Почта пользователя.
+        - hashed_password: Хеш пароля от учетной записи.
+        - is_active: Флаг активности пользователя.
+        - is_superuser: Флаг суперпользователя.
+        - is_verified: Флаг подтверждения учетной записи.
+    """
+
     __tablename__ = 'user'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -47,50 +52,7 @@ class User(SQLAlchemyBaseUserTable, Base):
     is_superuser: Mapped[bool] = mapped_column(default=False, nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
 
-
-
-#     company: Mapped['Company'] = relationship(
-#         back_populates='users', passive_deletes=True
-#     )
-#     department: Mapped[Optional['Department']] = relationship(
-#         back_populates='users', passive_deletes=True, foreign_keys=[department_id]
-#     )
-#     news: Mapped[list['News']] = relationship(
-#         back_populates='authors', cascade="all, delete-orphan"
-#     )
-#     owner_task: Mapped[list['Task']] = relationship(
-#         back_populates='owner', cascade="all, delete-orphan", foreign_keys='Task.owner_id'
-#     )
-#     target_task: Mapped[list['Task']] = relationship(
-#         back_populates='target', cascade="all, delete-orphan", foreign_keys='Task.target_id'
-#     )
-#     comments: Mapped[list['Comment']] = relationship(
-#         back_populates='user', cascade="all, delete-orphan", lazy="selectin", foreign_keys="Comment.author_id"
-#     )
-
-#     received_ratings: Mapped[list["Rating"]] = relationship(
-#         back_populates="employee",
-#         foreign_keys="Rating.owner_id",
-#         cascade="all, delete-orphan"
-#     )
-
-#     # Все оценки, которые выставил этот пользователь
-#     given_ratings: Mapped[list["Rating"]] = relationship(
-#         back_populates="evaluator",
-#         foreign_keys="Rating.head_id",
-#         cascade="all, delete-orphan"
-#     )
-
-    
-
-#     organized_meetings: Mapped[list["Meeting"]] = relationship(
-#     back_populates="organizer", cascade="all, delete-orphan"
-# )
-#     calendar_events: Mapped[list["Calendar"]] = relationship(
-#         back_populates="user", cascade="all, delete-orphan"
-#         )
-    
-
+    #   настройка индексов
     __table_args__ = (
         Index('idx_email', 'email'),
     )

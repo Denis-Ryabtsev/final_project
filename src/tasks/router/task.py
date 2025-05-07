@@ -1,16 +1,12 @@
 from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status, Response
+from fastapi import APIRouter, Depends, status
 
 from database import get_session
 from users.models import User
-from users.schemas import UserInformation
-from company.schemas.company import CompanyRead, CompanyCreate
 from tasks.depencies import check_company
-from company.service.company import CompanyService
-from tasks.schemas.task import TaskRead, TaskCreate, TaskChange, TaskChangeRole, TaskResponse
-from core_depencies import check_role, get_user
+from tasks.schemas.task import TaskRead, TaskCreate, TaskChange, TaskChangeRole
+from core_depencies import get_user
 from tasks.service.task import TaskService
-from tasks.models.task import TaskStatus
 from tasks.depencies import get_task_service
 
 
@@ -24,13 +20,24 @@ async def create_task(
     user: User = Depends(check_company),
     session: AsyncGenerator = Depends(get_session),
     service: TaskService = Depends(get_task_service)
-):
+) -> Union[TaskRead, Exception]:
+    """
+        Создаёт новой задачи и занесения ее в календарь пользователя.
+
+        Args:
+            data (TaskCreate): Входные данные для создания задачи.
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (TaskService): Сервис для создания пользователя.
+                        
+        Returns:
+            TaskRead: Схема для получения созданной задачи.
+    """
+
     result = await service.create_task(user, session, data)
     await service.add_task_calendar(session, result)
     
     return TaskRead(**result)
-    # return TaskRead.model_validate(result)
-    # return TaskResponse(message='Задача создана успешно')
 
 @task_router.delete('/{task_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
@@ -38,7 +45,17 @@ async def delete_task(
     user: User = Depends(check_company),
     session: AsyncGenerator = Depends(get_session),
     service: TaskService = Depends(get_task_service)
-):
+) -> Union[None, Exception]:
+    """
+        Создаёт новой задачи и занесения ее в календарь пользователя.
+
+        Args:
+            task_id (int): Идентификатор задачи.
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (TaskService): Сервис для создания пользователя.
+    """
+
     await service.delete_task(user, task_id, session)
 
 @task_router.patch('/{task_id}', response_model=TaskRead)
@@ -48,19 +65,47 @@ async def change_task(
     user: User = Depends(check_company),
     session: AsyncGenerator = Depends(get_session),
     service: TaskService = Depends(get_task_service)
-):
+) -> Union[TaskRead, Exception]:
+    """
+        Создаёт новой задачи и занесения ее в календарь пользователя.
+
+        Args:
+            task_id (int): Идентификатор задачи
+            data (TaskChange): Входные данные для изменения задачи.
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (TaskService): Сервис для создания пользователя.
+                        
+        Returns:
+            TaskRead: Схема для получения созданной задачи.
+    """
+
     result = await service.change_task(user, session, data, task_id)
 
     return TaskRead.model_validate(result)
 
-@task_router.patch('/my/{task_id}', response_model=TaskRead)
+@task_router.patch('/{task_id}/status', response_model=TaskRead)
 async def change_task_role(
     task_id: int,
     task_status: TaskChangeRole,
     user: User = Depends(get_user),
     session: AsyncGenerator = Depends(get_session),
     service: TaskService = Depends(get_task_service)
-):
+) -> Union[TaskRead, Exception]:
+    """
+        Создаёт новой задачи и занесения ее в календарь пользователя.
+
+        Args:
+            task_id (int): Идентификатор задачи
+            task_status (TaskChangeRole): Тип статуса задачи.
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (TaskService): Сервис для создания пользователя.
+                        
+        Returns:
+            TaskRead: Схема для получения созданной задачи.
+    """
+
     result = await service.change_task_role(user, session, task_id, task_status)
 
     return TaskRead.model_validate(result)

@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
 from fastapi import HTTPException, status, Depends
 from sqlalchemy import select
@@ -12,8 +12,21 @@ from news.schemas import NewsCreate
 class NewsService:
     
     async def create_news(
-            self, session: AsyncGenerator, user: User, company_id: int, data: NewsCreate
-    ):
+        self, session: AsyncGenerator, user: User, company_id: int, data: NewsCreate
+    ) -> Union[News, HTTPException]:
+        """
+            Создание новости.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+                company_id (int): Идентификатор компании
+                data (NewsCreate): Входные данные для создания новости
+
+            Returns:
+                data (News): Объект новости.
+        """
+
         if user.company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -41,8 +54,18 @@ class NewsService:
             )
     
     async def delete_news(
-            self, session: AsyncGenerator, user: User, company_id: int, news_id: int
-    ):
+        self, session: AsyncGenerator, user: User, company_id: int, news_id: int
+    ) -> Union[None, HTTPException]:
+        """
+            Удаление новости.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+                company_id (int): Идентификатор компании
+                news_id (int): Идентификатор новости
+        """
+
         if user.company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

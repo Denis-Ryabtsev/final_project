@@ -1,5 +1,5 @@
 from datetime import date
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
 from fastapi import HTTPException, status, Depends
 from sqlalchemy import extract, select
@@ -13,9 +13,27 @@ from calendars.models import Calendar
 
 
 class CalendarService:
+    """
+        Сервисный слой для работы с календарем:
+            - отображение дневного расписания
+            - отображение месячного расписания
+    """
+
     async def get_day_schedule(
-    self, user, session: AsyncGenerator, day: int
-):
+    self, user: User, session: AsyncGenerator, day: int
+) -> Union[Calendar, list[Calendar]]:
+        """
+            Получение дневного расписания.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                day (int): Номер дня
+
+            Returns:
+                list[Calendar] (Calendar): Список объектов Calendar.
+        """
+
         today = date.today()
         query = (
             select(Calendar)
@@ -32,7 +50,20 @@ class CalendarService:
     
     async def get_month_schedule(
         self, session: AsyncGenerator, user, year: int, month: int
-    ) -> list[CalendarRead]:
+    ) -> Union[Calendar, list[Calendar]]:
+        """
+            Получение месячного расписания.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+                year (int): Номер года
+                month (int): Номер месяца
+
+            Returns:
+                list[Calendar] (Calendar): Список объектов Calendar.
+        """
+
         query = (
             select(Calendar)
             .where(

@@ -11,9 +11,7 @@ from meeting.router import meeting_router
 from calendars.router import calendar_router
 
 
-app = FastAPI(
-    title='Final project'
-)
+app = FastAPI(title='Final project')
 
 app.include_router(registration_router)
 app.include_router(auth_router, tags=['Auth'])

@@ -1,20 +1,20 @@
-import datetime
-from typing import TYPE_CHECKING, Optional
-import enum
-
-from sqlalchemy import Boolean, String, Enum, Index, Integer, ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import String, Index, ForeignKey
+from sqlalchemy.orm import mapped_column, Mapped
 
 from database import Base
 
-from company.models.company import Company
-
-if TYPE_CHECKING:
-    from users.models import User
-    from tasks.models.task import Task
-
 
 class Comment(Base):
+    """
+        Модель комментариев к задачам
+    
+        Fields:
+        - id: Идентификатор комментария
+        - author_id: Идентификатор пользователя.
+        - task_id: Идентификатор задачи.
+        - description: Тело комментария.
+    """
+
     __tablename__ = 'comment'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -26,8 +26,8 @@ class Comment(Base):
     )
     description: Mapped[str] = mapped_column(String(1024), nullable=False)
 
-    
-    # user: Mapped['User'] = relationship(back_populates='comments')
-    # task: Mapped['Task'] = relationship(
-    #     back_populates='comment'
-    # )
+    #   настройка индексов
+    __table_args__ = (
+        Index('idx_author_id', 'author_id'),
+        Index('idx_task_id', 'task_id'),
+    )

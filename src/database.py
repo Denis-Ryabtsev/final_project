@@ -8,6 +8,7 @@ class Base(DeclarativeBase):
     pass
 
 
+#   инициализация движка и сессии для Алхимии
 class Database:
     def __init__(self, setting: Setting):
         self.engine = create_async_engine(

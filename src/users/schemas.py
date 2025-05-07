@@ -6,6 +6,19 @@ from users.models import RoleType
 
 
 class UserRegistration(BaseModel):
+    """
+        Схема для получения данных при регистрации пользователей
+
+        Fields:
+        - first_name: Имя пользователя.
+        - last_name: Фамилия пользователя.
+        - company_role: Роль в компании.
+        - company_code: Код компании для присоединения.
+        - email: Почта пользователя.
+        - password: Пароль от учетной записи.
+  
+    """
+
     first_name: str = Field(
         example='Иван', description='Введите свое имя', min_length=2, alias='name'
     )
@@ -35,6 +48,20 @@ class UserRegistration(BaseModel):
 
 
 class UserCreate(schemas.BaseUserCreate):
+    """
+        Схема для регистрации пользователей в fastapi_users
+    
+        Fields:
+        - first_name: Имя пользователя.
+        - last_name: Фамилия пользователя.
+        - company_role: Роль в компании.
+        - company_id: Идентификатор компании.
+        - department_id: Идентификатор отдела.
+        - email: Почта пользователя.
+        - password: Пароль от учетной записи.
+
+    """
+
     first_name: str
     last_name: str
     company_role: RoleType
@@ -45,10 +72,29 @@ class UserCreate(schemas.BaseUserCreate):
 
 
 class MessageResponse(BaseModel):
+    """
+        Схема для вывода сообщения при выполнении эндпоинта
+        
+        Fields:
+        - message: Сообщение ответа.
+
+    """
     message: str
 
 
 class UserInformation(BaseModel):
+    """
+        Схема для вывода информации пользователе
+
+        Fields:
+        - first_name: Имя пользователя.
+        - last_name: Фамилия пользователя.
+        - company_role: Роль в компании.
+        - company_id: Идентификатор компании.
+        - department_id: Идентификатор отдела.
+
+    """
+
     first_name: str
     last_name: str
     company_role: RoleType
@@ -61,19 +107,20 @@ class UserInformation(BaseModel):
 
 
 class UserChange(BaseModel):
+    """
+        Схема для изменения данных пользователя
+
+        Fields:
+        - first_name: Имя пользователя.
+        - last_name: Фамилия пользователя.
+        - company_role: Роль в компании.
+        - email: Почта пользователя.
+        - company_code: Код компании для присоединения.
+
+    """
+
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     company_role: Optional[RoleType] = None
     email: Optional[EmailStr] = None
     company_code: Optional[str] = None
-
-
-class UserRead(BaseModel):
-    first_name: str
-    last_name: str
-    companrole: RoleType
-    email: EmailStr
-
-    model_config = {
-        'from_attributes': True
-    }

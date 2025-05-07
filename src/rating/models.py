@@ -1,21 +1,26 @@
 import datetime
-from typing import TYPE_CHECKING, Optional
-import enum
 
-from sqlalchemy import Boolean, String, Enum, Index, Integer, ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import Index, ForeignKey
+from sqlalchemy.orm import mapped_column, Mapped
 
 from database import Base
 
-if TYPE_CHECKING:
-    from users.models import User
-    from tasks.models.comment import Comment
-    from company.models.company import Company
-    from tasks.models.task import Task
-    from tasks.models.task import Task
-
 
 class Rating(Base):
+    """
+        Модель оценок задач
+    
+        Fields:
+        - id: Идентификатор оценки
+        - task_id: Идентификатор задачи.
+        - owner_id: Исполнитель задачи.
+        - head_id: Оценщик задачи.
+        - score_date: Оценка дедлайна.
+        - score_quality: Оценка качества.
+        - score_complete: Оценка полноты выполнения.
+        - created_at: Дата создания оценки.
+    """
+
     __tablename__ = 'rating'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -30,13 +35,10 @@ class Rating(Base):
     score_complete: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[datetime.date] = mapped_column(default=datetime.date.today)
 
-    # employee: Mapped["User"] = relationship(
-    # foreign_keys=[owner_id],
-    # back_populates="received_ratings"
-    # )
-
-    # evaluator: Mapped["User"] = relationship(
-    #     foreign_keys=[head_id],
-    #     back_populates="given_ratings"
-    # )
-    # task: Mapped["Task"] = relationship(back_populates="ratings")
+    #   настройка индексов
+    __table_args__ = (
+        Index('idx_task_id', 'task_id'),
+        Index('idx_owner_id', 'owner_id'),
+        Index('idx_head_id', 'head_id'),
+        Index('idx_created_at', 'created_at'),
+    )

@@ -1,47 +1,30 @@
-from typing import TYPE_CHECKING
-
-from sqlalchemy import Boolean, String, Enum, Index, ForeignKey, Integer
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import String, Index
+from sqlalchemy.orm import mapped_column, Mapped
 
 from database import Base
 
-
-
-if TYPE_CHECKING:
-    from users.models import User
-    from company.models.department import Department
-    from news.models import News
-    from tasks.models.task import Task
-    from meeting.models import Meeting
     
 class Company(Base):
+    """
+        Модель компании
+    
+        Fields:
+        - id: Идентификатор компании
+        - name: Название компании.
+        - description: Описание команды.
+        - company_code: Код приглашения команды.
+        - admin_code: Админ код для назначение роли админа.
+    """
+
     __tablename__ = 'company'
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(40), nullable=False)
     description: Mapped[str] = mapped_column(String(200), nullable=True)
     company_code: Mapped[str] = mapped_column(String(4), nullable=False)
     admin_code: Mapped[str] = mapped_column(String(6), nullable=False)
 
-#     users: Mapped[list['User']] = relationship(
-#         back_populates='company', cascade="all, delete-orphan"
-#     )
-#     departments: Mapped[list['Department']] = relationship(
-#         back_populates='company', cascade="all, delete-orphan"
-#     )
-#     news: Mapped[list['News']] = relationship(
-#         back_populates='company', cascade="all, delete-orphan"
-#     )
-#     task: Mapped[list['Task']] = relationship(
-#         back_populates='company', cascade="all, delete-orphan"
-#     )
-
-#     meetings: Mapped[list["Meeting"]] = relationship(
-#     back_populates="company", cascade="all, delete-orphan"
-# )
-
     __table_args__ = (
         Index('idx_code', 'company_code'),
+        Index('idx_admin_code', 'admin_code'),
     )

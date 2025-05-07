@@ -1,21 +1,18 @@
+from typing import Union
+
 from fastapi import Depends, HTTPException, status
 
 from users.models import User, RoleType
-from users.manager import fastapi_users
-from company.service.company import CompanyService
-from company.service.department import DepartmentService
-from core_depencies import check_role, get_user
-from tasks.service.task import TaskService
-from tasks.service.comment import CommentService
+from core_depencies import get_user
 from rating.service import RatingService
 
 
+#   получение объекта сервиса для оценки
 def get_rating_service() -> RatingService:
     return RatingService()
 
-def check_rating_role(
-    user: User = Depends(get_user)
-):
+#   проверка роли пользователя в команде
+def check_rating_role(user: User = Depends(get_user)) -> Union[User, HTTPException]:
     if user == RoleType.employee:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

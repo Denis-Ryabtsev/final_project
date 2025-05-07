@@ -1,23 +1,36 @@
-import datetime
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
-from fastapi import HTTPException, status, Depends
-from sqlalchemy import func, select
+from fastapi import HTTPException, status
+from sqlalchemy import select
 
-from tasks.schemas.task import TaskChange
 from users.models import User
-from company.schemas.department import DepartmentCreate
-from company.models.department import Department
 from tasks.models.task import Task, TaskStatus
 from rating.models import Rating
-from rating.schemas import AvgRatingRead
-# from company.depencies import check_role
+from rating.schemas import RatingCreate
 
 
 class RatingService:
+    """
+        Сервисный слой для работы с оценками задач:
+            - создание оценки
+    """
+
     async def create_rating(
-        self, user, session, task_id, data
-    ):
+        self, user: User, session: AsyncGenerator, task_id: int, data: RatingCreate
+    ) -> Union[RatingCreate, HTTPException]:
+        """
+            Создаёт новую оценку.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                task_id (int): Идентификатор задачи
+                data (RatingCreate): Входные данные для создания оценки.
+            
+            Returns:
+                data (Rating): Объект оценки.
+        """
+
         query = select(Task).where(Task.id == task_id)
         target_task = (await session.execute(query)).scalars().first()
         if not target_task:
@@ -57,29 +70,3 @@ class RatingService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e)
             )
-    
-#     async def get_avg_rating(
-#         self, session: AsyncGenerator, user: User
-# ):
-#         # Определяем начало текущего квартала
-#         today = datetime.utcnow().date()
-#         quarter = (today.month - 1) // 3 + 1
-#         quarter_start_month = 3 * (quarter - 1) + 1
-#         quarter_start = datetime(today.year, quarter_start_month, 1).date()
-
-#         # Строим запрос
-#         query = (
-#             select(
-#                 func.avg(Rating.score_date).label("avg_date"),
-#                 func.avg(Rating.score_quality).label("avg_quality"),
-#                 func.avg(Rating.score_complete).label("avg_complete"),
-#             )
-#             .where(
-#                 Rating.owner_id == user.id,
-#                 Rating.created_at >= quarter_start,
-#             )
-#         )
-
-#         result = await session.execute(query)
-#         row = result.mappings().first() or {}
-#         return AvgRatingRead(**row)

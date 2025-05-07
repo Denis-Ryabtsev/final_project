@@ -1,9 +1,11 @@
 from fastapi import Depends, HTTPException, status
+
 from core_depencies import check_role
 from users.models import User
 from news.service import NewsService
 
 
+#   проверка на принадлежность к команде
 def check_company_news(user: User = Depends(check_role)):
     if not user.company_id:
         raise HTTPException(
@@ -13,5 +15,6 @@ def check_company_news(user: User = Depends(check_role)):
     
     return user
 
+#   получение объекта сервиса новостей
 def get_news_service() -> NewsService:
     return NewsService()

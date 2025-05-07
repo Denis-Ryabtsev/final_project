@@ -11,6 +11,7 @@ from rating.service import RatingService
 from meeting.service import MeetingService
 
 
+#   проверка на роль и наличие команды
 def check_company_role_meeting(
     user: User = Depends(get_user)
 ):
@@ -27,5 +28,6 @@ def check_company_role_meeting(
     
     return user
 
+#   возврат объекта сервиса для встреч
 def get_meeting_service() -> MeetingService:
     return MeetingService()

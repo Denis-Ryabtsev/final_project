@@ -1,21 +1,12 @@
 import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 import enum
 
-from sqlalchemy import Boolean, String, Enum, Index, Integer, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import Enum, Index, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import mapped_column, Mapped
 
 from database import Base
 
-
-
-if TYPE_CHECKING:
-    from users.models import User
-    from tasks.models.comment import Comment
-    from company.models.company import Company
-    from rating.models import Rating
-    from tasks.models.task import Task
-    from meeting.models import Meeting
 
 class CalendarStatus(enum.Enum):
     task = 'task'
@@ -23,6 +14,20 @@ class CalendarStatus(enum.Enum):
 
 
 class Calendar(Base):
+    """
+        Модель календаря пользователя
+    
+        Fields:
+        - id: Идентификатор записи события
+        - user_id: Идентификатор пользователя.
+        - event_date: Дата события.
+        - event_time: Время события.
+        - title: Заголовок события
+        - type_event: Тип события
+        - task_id: Идентификатор задачи
+        - meeting_id: Идентификатор встречи
+    """
+
     __tablename__ = 'calendar'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -40,12 +45,11 @@ class Calendar(Base):
         ForeignKey("meeting.id", ondelete="CASCADE"), nullable=True
     )
 
-    
+    #   настройка ограничений и индексов
     __table_args__ = (
         UniqueConstraint("user_id", "event_date", "event_time", name="uix_user_datetime"),
+        Index("idx_calendar_user", "user_id"),
+        Index("idx_calendar_date", "event_date"),
+        Index("idx_calendar_task", "task_id"),
+        Index("idx_calendar_meeting", "meeting_id"),
     )
-
-    # # Relationships
-    # user = relationship("User", back_populates="calendar_events", )
-    # task = relationship("Task", back_populates="calendar_event", lazy="selectin")
-    # meeting = relationship("Meeting", back_populates="calendar_event", lazy="selectin")

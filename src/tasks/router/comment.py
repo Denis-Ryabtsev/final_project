@@ -1,19 +1,13 @@
 from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status, Response
+from fastapi import APIRouter, Depends, status
 
 from database import get_session
 from users.models import User
-from users.schemas import UserInformation
-from company.schemas.company import CompanyRead, CompanyCreate
 from tasks.depencies import check_company
-from company.service.company import CompanyService
-from tasks.schemas.task import TaskRead, TaskCreate, TaskChange, TaskChangeRole
 from tasks.schemas.comment import CommentCreate, CommentRead
-from core_depencies import check_role, get_user
-from tasks.service.task import TaskService
+from core_depencies import get_user
 from tasks.service.comment import CommentService
-from tasks.models.task import TaskStatus
-from tasks.depencies import get_task_service, get_comment_service
+from tasks.depencies import get_comment_service
 
 
 comment_router = APIRouter(
@@ -27,7 +21,20 @@ async def comment_create(
     user: User = Depends(get_user),
     session: AsyncGenerator = Depends(get_session),
     service: CommentService = Depends(get_comment_service)
-):
+) -> Union[CommentRead, Exception]:
+    """
+        Создаёт нового комментария.
+
+        Args:
+            data (CommentCreate): Входные данные для создания комментария.
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (CommentService): Сервис для создания комментария.
+        
+        Returns:
+            CommentRead: Информация о комментарии.
+    """
+
     result = await service.create_comment(user, session, task_id, data)
 
     return CommentRead.model_validate(result)
@@ -39,6 +46,16 @@ async def comment_create(
     user: User = Depends(check_company),
     session: AsyncGenerator = Depends(get_session),
     service: CommentService = Depends(get_comment_service)
-):
-    
+) -> Union[None, Exception]:
+    """
+        Удаление комментария.
+
+        Args:
+            task_id (int): Идентификатор задачи.
+            comment_id (int): Идентификатор комментария.
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (CommentService): Сервис для создания комментария.
+    """
+
     await service.delete_comment(user, session, task_id, comment_id)
