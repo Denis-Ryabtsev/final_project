@@ -11,6 +11,7 @@ class Setting(BaseSettings):
     DB_POSTGRES_PASS: str
 
     SECRET: str
+    SECRET_ADMIN: str
 
     #   метод для возврата ссылки подключения к БД в формате DSN
     @property
