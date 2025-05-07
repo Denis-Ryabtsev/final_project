@@ -50,7 +50,7 @@ async def delete_meeting(
     user: User = Depends(check_company_role_meeting),
     session: AsyncGenerator = Depends(get_session),
     service: MeetingService = Depends(get_meeting_service)
-) -> Union[None, Exception]:
+) -> None:
     """
         Удаляет встречу.
 

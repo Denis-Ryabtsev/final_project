@@ -91,7 +91,7 @@ async def delete_user(
     session: AsyncGenerator = Depends(get_session),
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
-) -> Union[None, Exception]:
+) -> None:
     """
         Удаление пользователя.
 

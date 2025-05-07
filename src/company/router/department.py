@@ -74,7 +74,7 @@ async def delete_department(
     session: AsyncGenerator = Depends(get_session),
     user: User = Depends(check_company),
     service: DepartmentService = Depends(get_department_service)
-) -> Union[None, Exception]:
+) -> None:
     """
         Удаление отдела компании.
 

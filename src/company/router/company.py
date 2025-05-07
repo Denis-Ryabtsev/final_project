@@ -96,7 +96,7 @@ async def delete_company(
     session: AsyncGenerator = Depends(get_session),
     service: CompanyService = Depends(get_company_service),
     user: User = Depends(check_role) 
-) -> Union[None, Exception]:
+) -> None:
     """
         Удаление компании.
 

@@ -46,7 +46,7 @@ async def comment_create(
     user: User = Depends(check_company),
     session: AsyncGenerator = Depends(get_session),
     service: CommentService = Depends(get_comment_service)
-) -> Union[None, Exception]:
+) -> None:
     """
         Удаление комментария.
 

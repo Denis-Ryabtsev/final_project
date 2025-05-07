@@ -45,7 +45,7 @@ async def delete_task(
     user: User = Depends(check_company),
     session: AsyncGenerator = Depends(get_session),
     service: TaskService = Depends(get_task_service)
-) -> Union[None, Exception]:
+) -> None:
     """
         Создаёт новой задачи и занесения ее в календарь пользователя.
 

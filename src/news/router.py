@@ -50,7 +50,7 @@ async def delete_news(
     user: User = Depends(check_company_news),
     session: AsyncGenerator = Depends(get_session),
     service: NewsService = Depends(get_news_service)
-) -> Union[None, Exception]:
+) -> None:
     """
         Удаляет новость.
 
