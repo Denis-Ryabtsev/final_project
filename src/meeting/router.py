@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, status, Response
 from database import get_session
 from users.models import User
 from users.schemas import UserInformation
+from core_depencies import get_user
 from company.schemas.company import CompanyRead, CompanyCreate
-from company.depencies import get_company_service
+from company.depencies import get_company_service, check_company
 from company.service.company import CompanyService
 from core_depencies import check_role
 from meeting.schemas import MeetingCreate, MeetingRead, MeetingChange, MeetingResponse
@@ -112,3 +113,25 @@ async def add_user_meeting(
     
     service.add_user_meeting(user, session, meeting_id, user_id)
     return MeetingResponse(message='Пользователь успешно добавлен')
+
+@meeting_router.get('', response_model=list[MeetingRead])
+async def get_owner_meeting(
+    user: User = Depends(check_company),
+    session: AsyncGenerator = Depends(get_session),
+    service: MeetingService = Depends(get_meeting_service)
+) -> list[MeetingRead]:
+    """
+        Получение списка встреч.
+
+        Args:
+            user (User): Получение текущего пользователя.
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (MeetingService): Сервис для создания встреч.
+            
+        Returns:
+            MeetingRead: Схема для отображения встречи.
+    """
+
+    result = service.get_meeting(user, session, user.company_id)
+
+    return MeetingRead.model_validate(result)
