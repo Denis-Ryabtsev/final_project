@@ -84,7 +84,7 @@ class TaskService:
             )
     
     async def add_task_calendar(
-        self, session: AsyncGenerator, task: Task
+        self, session: AsyncGenerator, task: dict
     ) -> Union[None, HTTPException]:
         """
             Добавление задачи в календарь пользователя.
@@ -93,7 +93,7 @@ class TaskService:
                 session (AsyncGenerator): SQLAlchemy-сессия.
                 task (Task): Объект задачи.
         """
-
+        
         try:
             calendar = {
                     'user_id': task['target_id'],
@@ -138,7 +138,11 @@ class TaskService:
                 detail=f'Задача не из твоей команды'
             )
         
+        query = select(Calendar).where(Calendar.task_id == task_id)
+        target_calendar = (await session.execute(query)).scalars().first()
+
         try:
+            await session.delete(target_calendar)
             await session.delete(target_task)
             await session.commit()
         except Exception as e:
@@ -174,7 +178,7 @@ class TaskService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f'Задача не из твоей команды'
-            )
+        )
         
         try:
             task = data.model_dump(exclude_unset=True)
