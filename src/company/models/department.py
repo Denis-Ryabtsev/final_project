@@ -21,7 +21,7 @@ class Department(Base):
     name: Mapped[str] = mapped_column(String(40), nullable=False)
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id'), nullable=False)
     head_user_id: Mapped[int] = mapped_column(
-        ForeignKey('user.id', use_alter=True, deferrable=True), nullable=False
+        ForeignKey('user.id', use_alter=True, deferrable=True), nullable=True
     )
 
     __table_args__ = (
