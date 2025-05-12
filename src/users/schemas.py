@@ -1,6 +1,7 @@
 from typing import Optional
+
 from fastapi_users import schemas
-from pydantic import BaseModel, Field, EmailStr, field_validator, ValidationError
+from pydantic import BaseModel, Field, EmailStr
 
 from users.models import RoleType
 
@@ -38,13 +39,9 @@ class UserRegistration(BaseModel):
         description='Пароль должен состоять минимум из 6 символов', min_length=6
     )
 
-    @field_validator('password')
-    @classmethod
-    def check_passwd(cls, value):
-        if not (any(item.isdigit()) for item in value):
-            raise ValidationError('В пароле нет цифр')
-        
-        return value
+    model_config = {
+        "populate_by_name": True
+    }
 
 
 class UserCreate(schemas.BaseUserCreate):
@@ -87,6 +84,7 @@ class UserInformation(BaseModel):
         Схема для вывода информации пользователе
 
         Fields:
+        - id: Идентификатор пользователя
         - first_name: Имя пользователя.
         - last_name: Фамилия пользователя.
         - company_role: Роль в компании.
@@ -94,9 +92,10 @@ class UserInformation(BaseModel):
         - department_id: Идентификатор отдела.
 
     """
-
+    id: int
     first_name: str
     last_name: str
+    email: str
     company_role: RoleType
     company_id: Optional[int] = None
     department_id: Optional[int] = None
