@@ -13,6 +13,9 @@ class Setting(BaseSettings):
     SECRET: str
     SECRET_ADMIN: str
 
+    BASE_DIR: str
+    STATIC_DIR: str
+
     #   метод для возврата ссылки подключения к БД в формате DSN
     @property
     def DB_POSTGRES_URL(self) -> str:
