@@ -68,13 +68,16 @@ async def get_news(
     service: NewsService = Depends(get_news_service)
 ) -> list[NewsRead]:
     """
-        Удаляет новость.
+        Получение новости.
 
         Args:
             company_id (int): Идентификатор компании
             user (User): Получение текущего пользователя.
             session (AsyncGenerator): SQLAlchemy-сессия.
             service (NewsService): Сервис для создания новости.
+        
+        Returns:
+            result (list[NewsRead]): Список новостей.
     """
 
     result = await service.get_news(session, company_id)
