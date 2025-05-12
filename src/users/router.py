@@ -11,11 +11,13 @@ from users.service import UserService
 from users.depencies import get_user_service
 from core_depencies import check_role
 from rating.schemas import AvgRatingRead, RatingReadUser
+
+from tasks.schemas.task import TaskRead
 from database import get_session
 
 
 registration_router = APIRouter(prefix='/registration', tags=['Registration'])
-auth_router = fastapi_users.get_auth_router(auth_backend)
+auth_user_router = fastapi_users.get_auth_router(auth_backend)
 operation_user = APIRouter(prefix='/users', tags=['User operations'])
 
 
@@ -154,7 +156,7 @@ async def delete_department(
 
     result = await service.delete_department(session, user, user_id)
 
-    return UserInformation.model_validate(result)
+    return result
 
 @operation_user.get('/me/rating', response_model=list[RatingReadUser])
 async def get_rating(
@@ -197,3 +199,48 @@ async def get_quarter_avg(
     """
 
     return await service.get_avg_rating(session, user)
+
+@operation_user.get('/me/tasks', response_model=list[TaskRead])
+async def get_my_tasks(
+    user: User = Depends(get_user),
+    session: AsyncGenerator = Depends(get_session),
+    service: UserService = Depends(get_user_service)
+) -> list[TaskRead]:
+    """
+        Получение назначенных задач.
+
+        Args:
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            user (User): Получение текущего пользователя.
+            service (UserService): Сервис для создания пользователя.
+
+        Returns:
+            result (list[Task]): Список назначенных задач.
+            
+    """
+    
+    result = await service.get_my_tasks(user, session)
+
+    return TaskRead.model_validate(result)
+
+@operation_user.get('/me/tasks_owner', response_model=list[TaskRead])
+async def get_my_tasks(
+    user: User = Depends(get_user),
+    session: AsyncGenerator = Depends(get_session),
+    service: UserService = Depends(get_user_service)
+) -> list[TaskRead]:
+    """
+        Получение выданных задач.
+
+        Args:
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            user (User): Получение текущего пользователя.
+
+        Returns:
+            result (list[Task]): Список выданных задач.
+        
+    """
+    
+    result = await service.get_owner_tasks(user, session)
+
+    return TaskRead.model_validate(result)
