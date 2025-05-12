@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import AsyncGenerator, Union
 
 from fastapi import HTTPException, status
@@ -6,11 +6,13 @@ from fastapi_users.exceptions import UserAlreadyExists
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
+from company.models.department import Department
 from rating.schemas import AvgRatingRead
-from users.schemas import UserCreate, UserChange, UserRegistration
+from users.schemas import UserCreate, UserChange, UserInformation, UserRegistration
 from users.models import RoleType, User
 from company.models.company import Company
 from rating.models import Rating
+from tasks.models.task import Task
 
 
 class UserService:
@@ -74,7 +76,7 @@ class UserService:
                 user (User): Получение текущего пользователя.
         """
 
-        return user
+        return UserInformation.model_validate(user)
     
     async def change_user(
         self, session: AsyncGenerator, user: User, data: UserChange
@@ -129,7 +131,11 @@ class UserService:
                 user (User): Получение текущего пользователя.
             
         """
-
+        if user.company_id == None or user.department_id == None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Перед удалением нужно выйти из отделов компании'
+            )
         await session.delete(user)
         await session.commit()
 
@@ -210,12 +216,11 @@ class UserService:
                 detail=f'Пользователь с id {target_user.company_id} должен быть из твоей команды'
             )
         
-        if not target_user.department_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f'Пользователь с id {target_user.company_id} не состоит в команде'
-            )
-        
+        query = select(Department).where(Department.id == target_user.department_id)
+        department = (await session.execute(query)).scalars().first()
+        if department and department.head_user_id == target_user.id:
+            department.head_user_id = None
+
         target_user.department_id = None
         await session.commit()
         await session.refresh(target_user)
@@ -236,9 +241,7 @@ class UserService:
         """
 
         query = (
-            select(Rating)
-            .options(selectinload(Rating.evaluator), selectinload(Rating.task))
-            .where(Rating.owner_id == user.id)
+            select(Rating).where(Rating.owner_id == user.id)
         )
         result = await session.execute(query)
 
@@ -259,7 +262,8 @@ class UserService:
             
         """
 
-        today = datetime.utcnow().date()
+        # today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         quarter = (today.month - 1) // 3 + 1
         quarter_start_month = 3 * (quarter - 1) + 1
         quarter_start = datetime(today.year, quarter_start_month, 1).date()
@@ -279,3 +283,43 @@ class UserService:
         result = await session.execute(query)
         row = result.mappings().first() or {}
         return AvgRatingRead(**row)
+    
+    async def get_my_tasks(
+        self, user: User, session: AsyncGenerator
+    ) -> list[Task]:
+        """
+            Получение назначенных задач.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+
+            Returns:
+                result (list[Task]): Список назначенных задач.
+            
+        """
+
+        query = select(Task).options(selectinload(Task.comments)).where(Task.target_id == user.id)
+        result = (await session.execute(query)).scalars().all()
+
+        return result
+    
+    async def get_owner_tasks(
+        self, user: User, session: AsyncGenerator
+    ):
+        """
+            Получение выданных задач.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+
+            Returns:
+                result (list[Task]): Список выданных задач.
+            
+        """
+
+        query = select(Task).options(selectinload(Task.comments)).where(Task.owner_id == user.id)
+        result = (await session.execute(query)).scalars().all()
+
+        return result
