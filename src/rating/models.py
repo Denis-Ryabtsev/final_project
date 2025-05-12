@@ -37,8 +37,8 @@ class Rating(Base):
 
     #   настройка индексов
     __table_args__ = (
-        Index('idx_task_id', 'task_id'),
-        Index('idx_owner_id', 'owner_id'),
+        Index('idx_rating_task_id', 'task_id'),
+        Index('idx_rating_owner_id', 'owner_id'),
         Index('idx_head_id', 'head_id'),
         Index('idx_created_at', 'created_at'),
     )
