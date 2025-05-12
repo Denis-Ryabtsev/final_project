@@ -100,7 +100,7 @@ class MeetingService:
                 target_meeting (Meeting): Объект встречи.
         """
 
-        data = data.model_dump(exclude_unset=True)
+        data = data.model_dump(exclude_none=True, exclude_unset=True)
         if not data.items():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -205,3 +205,22 @@ class MeetingService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e)
             )
+        
+    async def get_meeting(
+        self, user: User, session: AsyncGenerator, company_id: int
+    ) -> list[Meeting]:
+        """
+            Добавление пользователей на встречу.
+
+            Args:
+                user (User): Получение текущего пользователя.
+                session (AsyncGenerator): SQLAlchemy-сессия.
+            
+            Returns:
+                result (list[Meeting]): Список встреч.
+        """
+        
+        query = select(Meeting).where(Meeting.organizer_id == user.id)
+        result = (await session.execute(query)).scalars().all()
+
+        return result
