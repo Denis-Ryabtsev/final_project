@@ -2,7 +2,7 @@ import datetime
 import enum
 
 from sqlalchemy import String, Enum, Index, ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from database import Base
 
@@ -46,10 +46,12 @@ class Task(Base):
     description: Mapped[str] = mapped_column(String(1024))
     status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus), default=TaskStatus.todo)
 
+    comments = relationship("Comment", back_populates="task", cascade="all, delete-orphan")
+
     #   настройка индексов
     __table_args__ = (
         Index('idx_company_id', 'company_id'),
-        Index('idx_owner_id', 'owner_id'),
+        Index('idx_task_owner_id', 'owner_id'),
         Index('idx_target_id', 'target_id'),
         Index('idx_status', 'status'),
         Index('idx_start_end_date', 'start_date', 'end_date'),
