@@ -40,7 +40,7 @@ async def comment_create(
     return CommentRead.model_validate(result)
 
 @comment_router.delete('/{comment_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def comment_create(
+async def comment_delete(
     task_id: int,
     comment_id: int,
     user: User = Depends(check_company),
