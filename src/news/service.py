@@ -86,5 +86,25 @@ class NewsService:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=str(e)
-            )
+                detail=str(e))
+    
+    async def get_news(
+        self, session: AsyncGenerator, company_id: int
+    ) -> list[News]:
+        """
+            Получение списка новостей.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                user (User): Получение текущего пользователя.
+                company_id (int): Идентификатор компании
+                news_id (int): Идентификатор новости
+            
+            Returns:
+                result (list[News]): Список новостей.
+        """
+
+        query = select(News).where(News.company_id == company_id)
+        result = (await session.execute(query)).scalars().all()
+
+        return result
