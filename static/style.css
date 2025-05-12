@@ -1,0 +1,128 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 2em;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+h1, h2 {
+    color: #005f88;
+}
+
+form {
+    background: #fff;
+    padding: 1em;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    max-width: 400px;
+}
+
+input, button {
+    margin-top: 0.5em;
+    width: 100%;
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
+nav a {
+    margin-right: 1em;
+    text-decoration: none;
+    color: #005f88;
+}
+
+nav a.active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.cell-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+select, button {
+    padding: 5px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button {
+    cursor: pointer;
+}
+
+.profile-form label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+}
+
+.profile-form input,
+.profile-form select {
+    margin-bottom: 10px;
+}
+
+.profile-form button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.profile-form button:hover {
+    background-color: #0056b3;
+}
+
+.profile-form-container form + form .delete-btn {
+    margin-top: 15px;
+    background-color: transparent;
+    color: red;
+    text-decoration: underline;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.profile-form-container form button {
+    margin-top: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.profile-form-container form button:hover {
+    background-color: #0056b3;
+}
+
+.profile-form-container form + form .delete-btn {
+    margin-top: 15px;
+    background-color: transparent;
+    color: red;
+    text-decoration: underline;
+}
