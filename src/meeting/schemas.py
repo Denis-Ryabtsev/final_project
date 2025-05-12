@@ -1,6 +1,6 @@
 from datetime import date, time
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class MeetingCreate(BaseModel):
@@ -61,6 +61,20 @@ class MeetingChange(BaseModel):
 
     meeting_date: Optional[date] = None
     meeting_time: Optional[time] = None
+
+    @field_validator('meeting_date', mode='before')
+    @classmethod
+    def parse_optional_date(cls, v):
+        if v == '':
+            return None
+        return v
+
+    @field_validator('meeting_time', mode='before')
+    @classmethod
+    def parse_optional_time(cls, v):
+        if v == '':
+            return None
+        return v
 
 
 class MeetingResponse(BaseModel):
