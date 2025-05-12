@@ -7,7 +7,7 @@ from users.schemas import UserInformation
 from company.schemas.company import CompanyRead, CompanyCreate
 from company.depencies import get_company_service
 from company.service.company import CompanyService
-from core_depencies import check_role
+from core_depencies import check_role, get_user
 
 
 company_router = APIRouter(
@@ -34,9 +34,9 @@ async def create_company(
             company (CompanyRead): Схема для получения данных компании.
     """
     
-    company = await service.create_company(session, data)
+    company = await service.create_company(session, data, user)
 
-    return company
+    return CompanyRead.model_validate(company)
 
 @company_router.post('/{company_id}/users', response_model=UserInformation)
 async def add_user(
@@ -108,3 +108,27 @@ async def delete_company(
     """
 
     await service.delete_company(session, company_id)
+
+@company_router.get('/{company_id}/users', response_model=list[UserInformation])
+async def get_company_users(
+    company_id: int,
+    session: AsyncGenerator = Depends(get_session),
+    service: CompanyService = Depends(get_company_service),
+    user: User = Depends(get_user)
+) -> list[UserInformation]:
+    """
+        Получение пользователей компании.
+
+        Args:
+            company_id (int): Идентификатор компании
+            session (AsyncGenerator): SQLAlchemy-сессия.
+            service (CompanyService): Сервис для создания компании.
+            user (User): Получение текущего пользователя.
+            
+        Returns:
+            result (list[UserInformation]): Схема для получения данных пользователя.
+    """ 
+    
+    result = await service.get_company_users(session, user, company_id)
+
+    return result
