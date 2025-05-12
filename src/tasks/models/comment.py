@@ -1,5 +1,5 @@
 from sqlalchemy import String, Index, ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from database import Base
 
@@ -25,6 +25,8 @@ class Comment(Base):
         ForeignKey('task.id', ondelete='CASCADE'), nullable=False
     )
     description: Mapped[str] = mapped_column(String(1024), nullable=False)
+
+    task = relationship("Task", back_populates="comments")
 
     #   настройка индексов
     __table_args__ = (
