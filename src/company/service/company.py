@@ -6,7 +6,7 @@ from sqlalchemy import delete, select, update
 from company.models.department import Department
 from users.models import User
 from users.schemas import UserInformation
-from company.schemas.company import CompanyCreate, CompanyRead
+from company.schemas.company import CompanyCreate
 from company.models.company import Company
 
 
@@ -52,7 +52,6 @@ class CompanyService:
             session.add(new_company)
             await session.commit()
             await session.refresh(new_company)
-            # return CompanyRead.model_validate(new_company)
             return new_company
         except Exception as e:
             raise HTTPException(
@@ -177,7 +176,19 @@ class CompanyService:
         
     async def get_company_users(
         self, session: AsyncGenerator, user: User, company_id: int
-    ):
+    ) -> UserInformation:
+        """
+            Получение списка пользователей.
+
+            Args:
+                session (AsyncGenerator): SQLAlchemy-сессия.
+                company_id (int): Идентификатор компании
+                user (User): Объект пользователя
+
+            Returns:
+                UserInformation: Схема для отображения пользователей
+        """
+
         if user.company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
