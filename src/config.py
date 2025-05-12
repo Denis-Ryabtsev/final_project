@@ -15,6 +15,7 @@ class Setting(BaseSettings):
 
     BASE_DIR: str
     STATIC_DIR: str
+    TEMPLATES_DIR: str
 
     #   метод для возврата ссылки подключения к БД в формате DSN
     @property
