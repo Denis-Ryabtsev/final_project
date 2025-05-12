@@ -130,14 +130,19 @@ class DepartmentService:
             
             target_department.head_user_id = target_user.id
             target_user.department_id = target_department.id
-            old_user.department_id = None
-            
+
+            if old_user:
+                old_user.department_id = None
+
             await session.commit()
+
             await session.refresh(target_department)
             await session.refresh(target_user)
-            await session.refresh(old_user)
+            if old_user:
+                await session.refresh(old_user)
 
             return target_department
+
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -170,8 +175,13 @@ class DepartmentService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Такого отдела {department_id} не существует'
             )
-
+        
         try:
+            query_users = select(User).where(User.department_id == department_id)
+            users_to_update = (await session.execute(query_users)).scalars().all()
+
+            for user in users_to_update:
+                user.department_id = None
             await session.delete(target_department)
             await session.commit()
         except Exception as e:
