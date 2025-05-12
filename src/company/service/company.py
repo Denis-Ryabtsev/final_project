@@ -1,9 +1,11 @@
 from typing import AsyncGenerator, Union
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 
+from company.models.department import Department
 from users.models import User
+from users.schemas import UserInformation
 from company.schemas.company import CompanyCreate, CompanyRead
 from company.models.company import Company
 
@@ -18,7 +20,7 @@ class CompanyService:
     """
 
     async def create_company(
-        self, session: AsyncGenerator, data: CompanyCreate
+        self, session: AsyncGenerator, data: CompanyCreate, user: User
     ) -> Union[Company, HTTPException]:
         """
             Создание компании.
@@ -30,6 +32,11 @@ class CompanyService:
             Returns:
                 (CompanyRead): Схема для отображения данных компании.
         """
+
+        if user.company_id:
+            raise HTTPException(
+                status_code=400, detail="Вы уже состоите в компании"
+            )
 
         query = select(Company).where(Company.name == data.name)
         result = (await session.execute(query)).scalars().first()
@@ -45,7 +52,8 @@ class CompanyService:
             session.add(new_company)
             await session.commit()
             await session.refresh(new_company)
-            return CompanyRead.model_validate(new_company)
+            # return CompanyRead.model_validate(new_company)
+            return new_company
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -123,6 +131,7 @@ class CompanyService:
         
         try:
             user.company_id = None
+            user.department_id = None
             session.add(user)
             await session.commit()
             await session.refresh(user)
@@ -153,6 +162,10 @@ class CompanyService:
             )
         
         try:
+            await session.execute(delete(Department).where(Department.company_id == company_id))
+            await session.execute(update(User).where(User.company_id == company_id).values(company_id=None))
+            await session.flush()
+
             await session.delete(company)
             await session.commit()
 
@@ -161,3 +174,17 @@ class CompanyService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e)
             )
+        
+    async def get_company_users(
+        self, session: AsyncGenerator, user: User, company_id: int
+    ):
+        if user.company_id != company_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Смотреть состав компании могут только ее сотрудники'
+            )
+        
+        query = select(User).where(User.company_id == company_id)
+        result = (await session.execute(query)).scalars().all()
+
+        return [UserInformation.model_validate(user) for user in result]
