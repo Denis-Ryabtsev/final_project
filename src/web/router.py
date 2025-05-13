@@ -29,12 +29,12 @@ from users.service import UserService
 from users.depencies import get_user_service
 from users.schemas import UserChange, UserRegistration
 from database import get_session
-from core_depencies import check_role
+from core_depencies import check_role, get_user
 from news.depencies import get_news_service
 
 from company.service.company import CompanyService
 from company.depencies import check_company, get_company_service, get_department_service
-from company.schemas.company import CompanyCreate, CompanyRead
+from company.schemas.company import CompanyCreate
 from meeting.depencies import get_meeting_service
 
 
@@ -69,10 +69,7 @@ async def index_page(
         ratings = await user_service.get_rating(session, user)
         avg = await user_service.get_avg_rating(session, user)
 
-        # Получаем задачи, которые вы создали
         tasks["owner_tasks"] = await user_service.get_owner_tasks(user, session)
-
-        # Получаем задачи, которые вам назначены
         tasks["assigned_tasks"] = await user_service.get_my_tasks(user, session)
 
     return templates.TemplateResponse("index.html", {
@@ -107,7 +104,7 @@ async def login_post(
 
         token = await auth_backend.get_strategy().write_token(db_user)
 
-        response = RedirectResponse(url="/", status_code=302)  # 💥 вот здесь важно
+        response = RedirectResponse(url="/", status_code=302)
         response.set_cookie(
             key="project",
             value=token,
@@ -146,7 +143,7 @@ async def register_user(
     try:
         if company_code == '':
             company_code = None
-        # Приводим поля к схеме UserRegistration
+
         data = UserRegistration(
             first_name=first_name,
             last_name=last_name,
@@ -202,12 +199,26 @@ async def edit_profile(
         return RedirectResponse(url="/", status_code=302)
 
     except Exception as e:
-        # 🔥 загружаем профиль заново, чтобы вернуть страницу
         profile = await service.get_user(user)
+    
+        tasks = {
+            "owner_tasks": await service.get_owner_tasks(user, session),
+            "assigned_tasks": await service.get_my_tasks(user, session)
+        }
+        ratings = await service.get_rating(session, user)
+        avg = await service.get_avg_rating(session, user)
+        users = []
+        if user.company_id:
+            users = await get_company_service().get_company_users(session, user, user.company_id)
+
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user": user,
             "profile": profile,
+            "tasks": tasks,
+            "users": users,
+            "ratings": ratings,
+            "avg": avg,
             "error": str(e)
         }, status_code=400)
 
@@ -225,7 +236,6 @@ async def delete_profile(
         return response
 
     except Exception as e:
-        # 🔥 загружаем профиль заново, чтобы вернуть страницу
         profile = await service.get_user(user)
         return templates.TemplateResponse("index.html", {
             "request": request,
@@ -247,22 +257,27 @@ async def change_role_post(
     try:
         if user.company_role != RoleType.admin:
             raise HTTPException(status_code=403, detail="Недостаточно прав")
-        # Вызываем твой сервис
+
         await user_service.change_role(session, user, user_id, RoleType(role))
         return RedirectResponse(url="/", status_code=302)
 
     except Exception as e:
-        print(f"[CHANGE ROLE ERROR]: {e}")
-        # Повторно загружаем все данные, чтобы вернуть страницу
+        error = e.detail if isinstance(e, HTTPException) else str(e)
+
         profile = await user_service.get_user(user)
         users = await company_service.get_company_users(session, user, user.company_id)
+        tasks = {
+        "owner_tasks": await user_service.get_owner_tasks(user, session),
+        "assigned_tasks": await user_service.get_my_tasks(user, session)
+    }
 
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user": user,
             "profile": profile,
             "users": users,
-            "error": str(e)
+            "tasks": tasks,
+            "error": error
         }, status_code=400)
     
 @router.post("/remove-department")
@@ -277,8 +292,6 @@ async def remove_department_post(
     try:
         if user.company_role != RoleType.admin:
             raise HTTPException(status_code=403, detail="Недостаточно прав")
-        # if user.department_id == "":
-        #     user.department_id = None
 
         await user_service.delete_department(session, user, user_id)
         users = await company_service.get_company_users(session, user, user.company_id)
@@ -311,9 +324,10 @@ async def create_company_post(
     session: AsyncGenerator = Depends(get_session)
 ):
     try:
-        # Запрещаем создавать, если уже в компании
         if user.company_id:
             raise HTTPException(status_code=400, detail="Вы уже состоите в компании")
+        if user.company_role != RoleType.admin:
+            raise HTTPException(status_code=403, detail="Недостаточно прав")
 
         data = CompanyCreate(
             name=name,
@@ -324,8 +338,7 @@ async def create_company_post(
 
         company = await company_service.create_company(session, data, user)
 
-        # Назначаем компанию и роль пользователю
-        user.company_id = company.id  # или company.id, если ты хранишь id
+        user.company_id = company.id
         user.company_role = RoleType.admin
         await session.commit()
         await session.refresh(user)
@@ -333,19 +346,21 @@ async def create_company_post(
         return RedirectResponse(url="/", status_code=302)
 
     except Exception as e:
-        print(f"[CREATE COMPANY ERROR]: {e}")
         profile = await user_service.get_user(user)
         users = []
         ratings = await user_service.get_rating(session, user)
         avg = await user_service.get_avg_rating(session, user)
+        tasks = {
+            "owner_tasks": await user_service.get_owner_tasks(user, session),
+            "assigned_tasks": await user_service.get_my_tasks(user, session)
+        }
 
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user": user,
             "profile": profile,
             "users": users,
-            "ratings": ratings,
-            "avg": avg,
+            "tasks": tasks,
             "error": e.detail if isinstance(e, HTTPException) else str(e)
         }, status_code=400)
     
@@ -431,12 +446,16 @@ async def remove_user_from_company(
 async def delete_company_post(
     request: Request,
     company_id: int = Form(...),
-    user: User = Depends(check_role),
+    user: User = Depends(get_user),
     session: AsyncGenerator = Depends(get_session),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
 ):
+    
     try:
+        if user.company_role != RoleType.admin:
+            raise HTTPException(status_code=403, detail="Недостаточно прав")
+        
         await company_service.delete_company(session, company_id)
         user.company_id = None
         user.company_role = RoleType.employee
@@ -445,24 +464,25 @@ async def delete_company_post(
         return RedirectResponse(url="/", status_code=302)
 
     except Exception as e:
-        print(f"[DELETE COMPANY ERROR]: {e}")
         error = e.detail if isinstance(e, HTTPException) else str(e)
 
         profile = await user_service.get_user(user)
         users = []
         ratings = await user_service.get_rating(session, user)
         avg = await user_service.get_avg_rating(session, user)
+        tasks = {
+            "owner_tasks": await user_service.get_owner_tasks(user, session),
+            "assigned_tasks": await user_service.get_my_tasks(user, session)
+        }
 
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user": user,
             "profile": profile,
             "users": users,
-            "ratings": ratings,
-            "avg": avg,
+            "tasks": tasks,
             "error": error
         }, status_code=400)
-    
 
 @router.post("/create-department")
 async def create_department_post(
@@ -495,7 +515,7 @@ async def create_department_post(
             "users": users,
             "ratings": ratings,
             "avg": avg,
-            "error": error  # 👈 ключ для вывода в шаблоне
+            "error": error
         }, status_code=400)
     
 @router.post("/change-department-head")
@@ -528,7 +548,7 @@ async def change_department_head_post(
             "users": users,
             "ratings": ratings,
             "avg": avg,
-            "error": error  # 👈 вывод ошибки
+            "error": error
         }, status_code=400)
     
 @router.post("/delete-department")
@@ -542,7 +562,6 @@ async def delete_department_post(
     session: AsyncGenerator = Depends(get_session)
 ):
     try:
-        # Проверка прав доступа
         user = check_company(current_user)
 
         await department_service.delete_department(session, user, user.company_id, department_id)
@@ -589,7 +608,6 @@ async def create_task_post(
             title=title,
             description=description
         )
-        # await task_service.create_task(user, session, data)
 
         result = await task_service.create_task(user, session, data)
         await task_service.add_task_calendar(session, result)
@@ -624,16 +642,13 @@ async def delete_task_post(
     session: AsyncGenerator = Depends(get_session)
 ):
     try:
-        # Удаляем задачу
         await task_service.delete_task(user, task_id, session)
         
-        # Получаем обновленные задачи после удаления
         tasks = {
             "owner_tasks": await user_service.get_owner_tasks(user, session),
             "assigned_tasks": await user_service.get_my_tasks(user, session)
         }
 
-        # Перенаправляем с обновленными задачами
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user": user,
@@ -679,7 +694,7 @@ async def edit_task_form(
         "user": user,
         "profile": profile,
         "tasks": tasks,
-        "edit_task": task  # 👈 передаем задачу в шаблон
+        "edit_task": task
     })
 
 @router.post("/edit-task/{task_id}")
@@ -738,7 +753,7 @@ async def change_task_status_post(
     company_service: CompanyService = Depends(get_company_service),
 ):
     try:
-        status_enum = TaskStatus(status)  # Преобразуем строку в Enum
+        status_enum = TaskStatus(status)
         await service.change_task_role(user, session, task_id, TaskChangeRole(status=status_enum))
 
         return RedirectResponse(url="/", status_code=302)
@@ -809,7 +824,6 @@ async def delete_comment_post(
     try:
         await comment_service.delete_comment(user, session, task_id, comment_id)
 
-        # Обновляем данные для рендера
         profile = await user_service.get_user(user)
         users = await company_service.get_company_users(session, user, user.company_id)
         ratings = await user_service.get_rating(session, user)
@@ -850,7 +864,6 @@ async def rate_task_post(
     session: AsyncGenerator = Depends(get_session)
 ):
     try:
-        # Создаем объект оценки
         data = RatingCreate(
             score_date=score_date,
             score_quality=score_quality,
@@ -1045,11 +1058,9 @@ async def change_meeting_post(
     session: AsyncGenerator = Depends(get_session),
 ):
     try:
-        # Преобразуем дату и время, если они были переданы
         parsed_date = datetime.date.fromisoformat(meeting_date_str) if meeting_date_str else None
         parsed_time = datetime.time.fromisoformat(meeting_time_str) if meeting_time_str else None
 
-        # Формируем данные только с заполненными полями
         data = MeetingChange(
             title=title,
             description=description,
@@ -1167,7 +1178,7 @@ async def view_month_schedule(
             "request": request,
             "user": user,
             "profile": profile,
-            "tasks": tasks,  # 👈 добавлено
+            "tasks": tasks,
             "calendar_month": events,
             "selected_month": month,
             "selected_year": year
@@ -1182,7 +1193,7 @@ async def view_month_schedule(
             "request": request,
             "user": user,
             "profile": profile,
-            "tasks": tasks,  # 👈 добавлено
+            "tasks": tasks,
             "calendar_month": [],
             "selected_month": month,
             "selected_year": year,
