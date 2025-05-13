@@ -131,7 +131,7 @@ class UserService:
                 user (User): Получение текущего пользователя.
             
         """
-        if user.company_id == None or user.department_id == None:
+        if user.company_id != None or user.department_id != None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Перед удалением нужно выйти из отделов компании'
