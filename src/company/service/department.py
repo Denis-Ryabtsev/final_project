@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Union
+from typing import Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from users.models import User
 from company.schemas.department import DepartmentCreate
@@ -17,13 +18,13 @@ class DepartmentService:
     """
 
     async def create_department(
-        self, session: AsyncGenerator, user: User, company_id: int, data: DepartmentCreate
+        self, session: AsyncSession, user: User, company_id: int, data: DepartmentCreate
     ) -> Union[Department, HTTPException]:
         """
             Создание отделов.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 company_id (int): Идентификатор компании
                 data (DepartmentCreate): Входные данные для создания отделов
@@ -81,14 +82,14 @@ class DepartmentService:
             )
         
     async def change_head_user(
-        self, session: AsyncGenerator, user: User, 
+        self, session: AsyncSession, user: User, 
         company_id: int, department_id: int, user_id: int
     ) -> Union[Department, HTTPException]:
         """
             Смена руководителя отдела.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 company_id (int): Идентификатор компании
                 department_id (int): Идентификатор отдела
@@ -150,14 +151,14 @@ class DepartmentService:
             )
 
     async def delete_department(
-        self, session: AsyncGenerator, user: User, 
+        self, session: AsyncSession, user: User, 
         company_id: int, department_id: int
     ) -> Union[None, HTTPException]:
         """
             Удаление отдела.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 company_id (int): Идентификатор компании
                 department_id (int): Идентификатор отдела

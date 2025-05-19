@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Union
+from typing import Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasks.schemas.task import TaskChange, TaskCreate
 from users.models import User
@@ -20,14 +21,14 @@ class TaskService:
     """
 
     async def create_task(
-        self, user: User, session: AsyncGenerator, data: TaskCreate
+        self, user: User, session: AsyncSession, data: TaskCreate
     ) -> Union[dict, HTTPException]:
         """
             Создание новой задачи.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 data (TaskCreate): Входные данные для создания задачи
 
             Returns:
@@ -84,13 +85,13 @@ class TaskService:
             )
     
     async def add_task_calendar(
-        self, session: AsyncGenerator, task: dict
+        self, session: AsyncSession, task: dict
     ) -> Union[None, HTTPException]:
         """
             Добавление задачи в календарь пользователя.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 task (Task): Объект задачи.
         """
         
@@ -114,7 +115,7 @@ class TaskService:
             )
     
     async def delete_task(
-        self, user: User, task_id: int, session: AsyncGenerator
+        self, user: User, task_id: int, session: AsyncSession
     ) -> Union[None, HTTPException]:
         """
             Удаление задачи.
@@ -122,7 +123,7 @@ class TaskService:
             Args:
                 user (User): Получение текущего пользователя.
                 task_id (int): Идентификатор задачи
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
         """
 
         query = select(Task).where(Task.id == task_id)
@@ -152,14 +153,14 @@ class TaskService:
             )
         
     async def change_task(
-        self, user: User, session: AsyncGenerator, data: TaskChange, task_id: int
+        self, user: User, session: AsyncSession, data: TaskChange, task_id: int
     ) -> Union[Task, HTTPException]:
         """
             Изменение задачи.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 data (TaskChange): Входные данные для изменения задачи
                 task_id (int): Идентификатор задачи
 
@@ -197,14 +198,14 @@ class TaskService:
             )
     
     async def change_task_role(
-        self, user: User, session: AsyncGenerator, task_id: int, task_status: TaskStatus
+        self, user: User, session: AsyncSession, task_id: int, task_status: TaskStatus
     ) -> Union[Task, HTTPException]:
         """
             Изменение статуса задачи.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 task_id (int): Идентификатор задачи
                 task_status (TaskStatus): Тип статуса задачи
 

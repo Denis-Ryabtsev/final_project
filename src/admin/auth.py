@@ -2,10 +2,6 @@ from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from starlette.responses import Response, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
-from config import get_setting
-
-
-# setting = get_setting()
 
 
 class AdminAuth(AuthenticationBackend):

@@ -1,5 +1,7 @@
-from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status
+from typing import Union
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_session
 from users.models import User
@@ -11,22 +13,22 @@ from core_depencies import check_role, get_user
 
 
 company_router = APIRouter(
-    prefix='/companies', tags=['Company operations']
+    prefix='/companies', tags=['Companies']
 )
 
 @company_router.post('', response_model=CompanyRead)
 async def create_company(
     data: CompanyCreate,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: CompanyService = Depends(get_company_service),
     user: User = Depends(check_role) 
 ) -> Union[CompanyRead, Exception]:
     """
-        Создаёт новой компании.
+        Создаёт новую компанию.
 
         Args:
             data (CompanyCreate): Входные данные для создания компании.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (CompanyService): Сервис для создания компании.
             user (User): Получение текущего пользователя.
             
@@ -42,7 +44,7 @@ async def create_company(
 async def add_user(
     company_id: int,
     user_id: int,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: CompanyService = Depends(get_company_service),
     user: User = Depends(check_role) 
 ) -> Union[UserInformation, Exception]:
@@ -52,7 +54,7 @@ async def add_user(
         Args:
             company_id (int): Идентификатор компании
             user_id (int): Идентификатор пользователя
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (CompanyService): Сервис для создания компании.
             user (User): Получение текущего пользователя.
             
@@ -68,7 +70,7 @@ async def add_user(
 async def delete_user(
     company_id: int,
     user_id: int,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: CompanyService = Depends(get_company_service),
     user: User = Depends(check_role) 
 ) -> Union[UserInformation, Exception]:
@@ -78,7 +80,7 @@ async def delete_user(
         Args:
             company_id (int): Идентификатор компании
             user_id (int): Идентификатор пользователя
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (CompanyService): Сервис для создания компании.
             user (User): Получение текущего пользователя.
             
@@ -86,14 +88,14 @@ async def delete_user(
             UserInformation: Схема для получения данных пользователя.
     """
 
-    add_user = await service.delete_user(session, company_id, user_id)
+    deleted_user = await service.delete_user(session, company_id, user_id)
 
-    return UserInformation.model_validate(add_user)
+    return UserInformation.model_validate(deleted_user)
 
-@company_router.delete('/{company_id}', status_code=status.HTTP_204_NO_CONTENT)
+@company_router.delete('/{company_id}', status_code=204)
 async def delete_company(
     company_id: int,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: CompanyService = Depends(get_company_service),
     user: User = Depends(check_role) 
 ) -> None:
@@ -102,7 +104,7 @@ async def delete_company(
 
         Args:
             company_id (int): Идентификатор компании
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (CompanyService): Сервис для создания компании.
             user (User): Получение текущего пользователя.
     """
@@ -112,7 +114,7 @@ async def delete_company(
 @company_router.get('/{company_id}/users', response_model=list[UserInformation])
 async def get_company_users(
     company_id: int,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: CompanyService = Depends(get_company_service),
     user: User = Depends(get_user)
 ) -> list[UserInformation]:
@@ -121,14 +123,14 @@ async def get_company_users(
 
         Args:
             company_id (int): Идентификатор компании
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (CompanyService): Сервис для создания компании.
             user (User): Получение текущего пользователя.
             
         Returns:
-            result (list[UserInformation]): Схема для получения данных пользователя.
+            company_users (list[UserInformation]): Схема для получения данных пользователя.
     """ 
     
-    result = await service.get_company_users(session, user, company_id)
+    company_users = await service.get_company_users(session, user, company_id)
 
-    return result
+    return company_users

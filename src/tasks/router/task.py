@@ -1,5 +1,7 @@
-from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status
+from typing import Union
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_session
 from users.models import User
@@ -11,14 +13,14 @@ from tasks.depencies import get_task_service
 
 
 task_router = APIRouter(
-    prefix='/companies/tasks', tags=['Tasks operations']
+    prefix='/companies/tasks', tags=['Tasks']
 )
 
 @task_router.post('', response_model=TaskRead)
 async def create_task(
     data: TaskCreate,
     user: User = Depends(check_company),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: TaskService = Depends(get_task_service)
 ) -> Union[TaskRead, Exception]:
     """
@@ -27,7 +29,7 @@ async def create_task(
         Args:
             data (TaskCreate): Входные данные для создания задачи.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (TaskService): Сервис для создания пользователя.
                         
         Returns:
@@ -39,11 +41,11 @@ async def create_task(
     
     return TaskRead(**result)
 
-@task_router.delete('/{task_id}', status_code=status.HTTP_204_NO_CONTENT)
+@task_router.delete('/{task_id}', status_code=204)
 async def delete_task(
     task_id: int,
     user: User = Depends(check_company),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: TaskService = Depends(get_task_service)
 ) -> None:
     """
@@ -52,7 +54,7 @@ async def delete_task(
         Args:
             task_id (int): Идентификатор задачи.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (TaskService): Сервис для создания пользователя.
     """
 
@@ -63,7 +65,7 @@ async def change_task(
     task_id: int,
     data: TaskChange,
     user: User = Depends(check_company),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: TaskService = Depends(get_task_service)
 ) -> Union[TaskRead, Exception]:
     """
@@ -73,7 +75,7 @@ async def change_task(
             task_id (int): Идентификатор задачи
             data (TaskChange): Входные данные для изменения задачи.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (TaskService): Сервис для создания пользователя.
                         
         Returns:
@@ -89,7 +91,7 @@ async def change_task_role(
     task_id: int,
     task_status: TaskChangeRole,
     user: User = Depends(get_user),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: TaskService = Depends(get_task_service)
 ) -> Union[TaskRead, Exception]:
     """
@@ -99,7 +101,7 @@ async def change_task_role(
             task_id (int): Идентификатор задачи
             task_status (TaskChangeRole): Тип статуса задачи.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (TaskService): Сервис для создания пользователя.
                         
         Returns:

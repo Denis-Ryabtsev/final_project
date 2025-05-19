@@ -1,5 +1,7 @@
-from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status, Response
+from typing import Union
+
+from fastapi import APIRouter, Depends, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from users.manager import fastapi_users
 from users.config_token import auth_backend
@@ -11,21 +13,20 @@ from users.service import UserService
 from users.depencies import get_user_service
 from core_depencies import check_role
 from rating.schemas import AvgRatingRead, RatingReadUser
-
 from tasks.schemas.task import TaskRead
 from database import get_session
 
 
 registration_router = APIRouter(prefix='/registration', tags=['Registration'])
 auth_user_router = fastapi_users.get_auth_router(auth_backend)
-operation_user = APIRouter(prefix='/users', tags=['User operations'])
+operation_user = APIRouter(prefix='/users', tags=['Users'])
 
 
 @registration_router.post('', response_model=MessageResponse)
 async def reg_user(
     data: UserRegistration, 
     service: UserService = Depends(get_user_service), 
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ) -> MessageResponse:
     """
         Создаёт нового пользователя.
@@ -33,7 +34,7 @@ async def reg_user(
         Args:
             data (UserRegistration): Входные данные для создания пользователя.
             service (UserService): Сервис для создания пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             
         Returns:
             MessageResponse: Сообщение об успешном выполнении.
@@ -66,7 +67,7 @@ async def get_user(
 @operation_user.patch('/me', response_model=UserInformation)
 async def change_user(
     data: UserChange,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
 ) -> Union[UserInformation, Exception]:
@@ -75,7 +76,7 @@ async def change_user(
 
         Args:
             data (UserChange): Входные данные для изменения пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (UserService): Сервис для создания пользователя.
             
@@ -87,10 +88,10 @@ async def change_user(
 
     return result
 
-@operation_user.delete('/me', status_code=status.HTTP_204_NO_CONTENT)
+@operation_user.delete('/me', status_code=204)
 async def delete_user(
     response: Response,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service)
 ) -> None:
@@ -99,7 +100,7 @@ async def delete_user(
 
         Args:
             response (Response): Ответ от сервера
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (UserService): Сервис для создания пользователя.
             
@@ -112,7 +113,7 @@ async def delete_user(
 async def change_role(
     user_id: int,
     role: RoleType,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     user: User = Depends(check_role),
     service: UserService = Depends(get_user_service)
 ) -> Union[UserInformation, Exception]:
@@ -122,7 +123,7 @@ async def change_role(
         Args:
             user_id (int): Идентификатор пользователя
             role (RoleType): Тип роли.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (UserService): Сервис для создания пользователя.
             
@@ -137,7 +138,7 @@ async def change_role(
 @operation_user.patch('/{user_id}/department', response_model=UserInformation)
 async def delete_department(
     user_id: int,
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     user: User = Depends(check_role),
     service: UserService = Depends(get_user_service)
 ) -> Union[UserInformation, Exception]:
@@ -146,7 +147,7 @@ async def delete_department(
 
         Args:
             user_id (int): Идентификатор пользователя
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (UserService): Сервис для создания пользователя.
             
@@ -161,7 +162,7 @@ async def delete_department(
 @operation_user.get('/me/rating', response_model=list[RatingReadUser])
 async def get_rating(
     user: User = Depends(get_user),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: UserService = Depends(get_user_service)
 ) -> list[RatingReadUser]:
     """
@@ -169,11 +170,11 @@ async def get_rating(
 
         Args:
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (UserService): Сервис для создания пользователя.
             
         Returns:
-            RatingReadUser: Информация об оценках задач.
+            RatingReadUser (list[RatingReadUser]): Информация об оценках задач.
     """
 
     result = await service.get_rating(session, user)
@@ -183,7 +184,7 @@ async def get_rating(
 @operation_user.get("/me/ratings/average", response_model=AvgRatingRead)
 async def get_quarter_avg(
     user: User = Depends(get_user),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: UserService = Depends(get_user_service)
 ) -> AvgRatingRead:
     """
@@ -191,7 +192,7 @@ async def get_quarter_avg(
 
         Args:
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (UserService): Сервис для создания пользователя.
             
         Returns:
@@ -203,14 +204,14 @@ async def get_quarter_avg(
 @operation_user.get('/me/tasks', response_model=list[TaskRead])
 async def get_my_tasks(
     user: User = Depends(get_user),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: UserService = Depends(get_user_service)
 ) -> list[TaskRead]:
     """
         Получение назначенных задач.
 
         Args:
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (UserService): Сервис для создания пользователя.
 
@@ -226,14 +227,14 @@ async def get_my_tasks(
 @operation_user.get('/me/tasks_owner', response_model=list[TaskRead])
 async def get_my_tasks(
     user: User = Depends(get_user),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: UserService = Depends(get_user_service)
 ) -> list[TaskRead]:
     """
         Получение выданных задач.
 
         Args:
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
 
         Returns:

@@ -1,7 +1,11 @@
 import datetime
-from typing import Optional, AsyncGenerator
-from fastapi import APIRouter, HTTPException, Request, Form, status, Depends
+from typing import Optional
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi_users.password import PasswordHelper
+
 from core.template import templates
 from company.schemas.department import DepartmentCreate
 from company.service.department import DepartmentService
@@ -31,14 +35,11 @@ from users.schemas import UserChange, UserRegistration
 from database import get_session
 from core_depencies import check_role, get_user
 from news.depencies import get_news_service
-
 from company.service.company import CompanyService
-from company.depencies import check_company, get_company_service, get_department_service
+from company.depencies import validate_company_presence, get_company_service, get_department_service
 from company.schemas.company import CompanyCreate
 from meeting.depencies import get_meeting_service
 
-
-from fastapi_users.password import PasswordHelper
 
 router = APIRouter()
 
@@ -50,7 +51,7 @@ async def index_page(
     news_service: UserService = Depends(get_news_service),
     company_service: CompanyService = Depends(get_company_service),
     meeting_service: MeetingService = Depends(get_meeting_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     profile = None
     users = []
@@ -138,7 +139,7 @@ async def register_user(
     email: str = Form(...),
     password: str = Form(...),
     service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         if company_code == '':
@@ -180,7 +181,7 @@ async def edit_profile(
     email: Optional[str] = Form(None),
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         if company_code == "":
@@ -227,7 +228,7 @@ async def delete_profile(
     request: Request,
     user: User = Depends(fastapi_users.current_user()),
     service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         await service.delete_user(session, user)
@@ -252,7 +253,7 @@ async def change_role_post(
     user: User = Depends(fastapi_users.current_user()),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         if user.company_role != RoleType.admin:
@@ -287,7 +288,7 @@ async def remove_department_post(
     user: User = Depends(fastapi_users.current_user()),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         if user.company_role != RoleType.admin:
@@ -321,7 +322,7 @@ async def create_company_post(
     user: User = Depends(fastapi_users.current_user()),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         if user.company_id:
@@ -370,7 +371,7 @@ async def add_user_post(
     user_id: int = Form(...),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     current_user: User = Depends(fastapi_users.current_user(optional=True)),
 ):
     try:
@@ -411,7 +412,7 @@ async def remove_user_from_company(
     request: Request,
     user_id: int = Form(...),
     user: User = Depends(check_role),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
 ):
@@ -447,7 +448,7 @@ async def delete_company_post(
     request: Request,
     company_id: int = Form(...),
     user: User = Depends(get_user),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
 ):
@@ -490,13 +491,13 @@ async def create_department_post(
     name: str = Form(...),
     head_user_id: int = Form(...),
     current_user: User = Depends(fastapi_users.current_user()),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     department_service: DepartmentService = Depends(get_department_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service)
 ):
     try:
-        user = check_company(current_user)
+        user = validate_company_presence(current_user)
         data = DepartmentCreate(name=name, head_user_id=head_user_id)
         await department_service.create_department(session, user, user.company_id, data)
         return RedirectResponse(url="/", status_code=302)
@@ -527,10 +528,10 @@ async def change_department_head_post(
     department_service: DepartmentService = Depends(get_department_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
-        user = check_company(current_user)
+        user = validate_company_presence(current_user)
         await department_service.change_head_user(session, user, user.company_id, department_id, user_id)
         return RedirectResponse(url="/", status_code=302)
 
@@ -559,10 +560,10 @@ async def delete_department_post(
     department_service: DepartmentService = Depends(get_department_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
-        user = check_company(current_user)
+        user = validate_company_presence(current_user)
 
         await department_service.delete_department(session, user, user.company_id, department_id)
         return RedirectResponse(url="/", status_code=302)
@@ -597,10 +598,10 @@ async def create_task_post(
     task_service: TaskService = Depends(get_task_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
-        user = check_company(current_user)
+        user = validate_company_presence(current_user)
         data = TaskCreate(
             target_id=target_id,
             start_date=start_date,
@@ -639,7 +640,7 @@ async def delete_task_post(
     user: User = Depends(fastapi_users.current_user()),
     task_service: TaskService = Depends(get_task_service),
     user_service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         await task_service.delete_task(user, task_id, session)
@@ -678,7 +679,7 @@ async def edit_task_form(
     user: User = Depends(fastapi_users.current_user()),
     task_service: TaskService = Depends(get_task_service),
     user_service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     task = await session.get(Task, task_id)
 
@@ -709,7 +710,7 @@ async def edit_task_post(
     user: User = Depends(fastapi_users.current_user()),
     task_service: TaskService = Depends(get_task_service),
     user_service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         data = TaskChange(
@@ -747,7 +748,7 @@ async def change_task_status_post(
     task_id: int = Form(...),
     status: str = Form(...),
     user: User = Depends(fastapi_users.current_user()),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: TaskService = Depends(get_task_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
@@ -787,7 +788,7 @@ async def add_comment_post(
     user: User = Depends(fastapi_users.current_user()),
     comment_service: CommentService = Depends(get_comment_service),
     user_service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
         data = CommentCreate(description=description)
@@ -819,7 +820,7 @@ async def delete_comment_post(
     comment_service: CommentService = Depends(get_comment_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         await comment_service.delete_comment(user, session, task_id, comment_id)
@@ -861,7 +862,7 @@ async def rate_task_post(
     rating_service: RatingService = Depends(get_rating_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ):
     try:
         data = RatingCreate(
@@ -894,7 +895,7 @@ async def create_news_post(
     title: str = Form(...),
     description: str = Form(...),
     user: User = Depends(fastapi_users.current_user()),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     news_service: NewsService = Depends(get_news_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service)
@@ -925,7 +926,7 @@ async def delete_news_post(
     news_id: int = Form(...),
     company_id: int = Form(...),
     user: User = Depends(fastapi_users.current_user()),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: NewsService = Depends(get_news_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service)
@@ -966,7 +967,7 @@ async def create_meeting_post(
     meeting_date: datetime.date = Form(...),
     meeting_time: datetime.time = Form(...),
     user: User = Depends(fastapi_users.current_user()),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     meeting_service: MeetingService = Depends(get_meeting_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service)
@@ -1008,7 +1009,7 @@ async def delete_meeting_post(
     request: Request,
     meeting_id: int = Form(...),
     user: User = Depends(fastapi_users.current_user()),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     meeting_service: MeetingService = Depends(get_meeting_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service)
@@ -1055,7 +1056,7 @@ async def change_meeting_post(
     meeting_time_str: str = Form(""),
     user: User = Depends(fastapi_users.current_user()),
     meeting_service: MeetingService = Depends(get_meeting_service),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
         parsed_date = datetime.date.fromisoformat(meeting_date_str) if meeting_date_str else None
@@ -1087,7 +1088,7 @@ async def add_meeting_user_post(
     user: User = Depends(fastapi_users.current_user()),
     meeting_service: MeetingService = Depends(get_meeting_service),
     user_service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     company_service: CompanyService = Depends(get_company_service)
 ):
     try:
@@ -1116,7 +1117,7 @@ async def view_calendar_day(
     calendar_service: CalendarService = Depends(get_calendar_service),
     user_service: UserService = Depends(get_user_service),
     company_service: CompanyService = Depends(get_company_service),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ):
     profile = await user_service.get_user(user)
     users = await company_service.get_company_users(session, user, user.company_id)
@@ -1162,7 +1163,7 @@ async def view_month_schedule(
     user: User = Depends(fastapi_users.current_user()),
     calendar_service: CalendarService = Depends(get_calendar_service),
     user_service: UserService = Depends(get_user_service),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
         profile = await user_service.get_user(user)

@@ -1,5 +1,7 @@
-from typing import Union, AsyncGenerator
+from typing import Union
+
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_session
 from users.models import User
@@ -9,7 +11,7 @@ from rating.service import RatingService
 
 
 rating_router = APIRouter(
-    prefix='/companies/tasks/{task_id}/ratings', tags=['Rating operations']
+    prefix='/companies/tasks/{task_id}/ratings', tags=['Ratings']
 )
 
 @rating_router.post('', response_model=RatingRead)
@@ -17,7 +19,7 @@ async def create_rating(
     task_id: int,
     data: RatingCreate,
     user: User = Depends(check_rating_role),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: RatingService = Depends(get_rating_service)
 ) -> Union[RatingRead, Exception]:
     """
@@ -26,7 +28,7 @@ async def create_rating(
         Args:
             data (RatingCreate): Входные данные для создания оценки.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (RatingService): Сервис для создания оценок.
             
         Returns:

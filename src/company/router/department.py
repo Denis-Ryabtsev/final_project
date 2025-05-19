@@ -1,33 +1,34 @@
-from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status
+from typing import Union
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_session
 from users.models import User
 from company.depencies import get_department_service
 from company.service.department import DepartmentService
 from company.schemas.department import DepartmentRead, DepartmentCreate
-from company.depencies import check_company
+from company.depencies import validate_company_presence
 
 
 department_router = APIRouter(
-    prefix='/companies', tags=['Department operations']
+    prefix='/companies/departments', tags=['Departments']
 )
 
-@department_router.post('/{company_id}/departments', response_model=DepartmentRead)
+@department_router.post('', response_model=DepartmentRead)
 async def create_department(
-    company_id: int,
     data: DepartmentCreate,
-    session: AsyncGenerator = Depends(get_session),
-    user: User = Depends(check_company),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(validate_company_presence),
     service: DepartmentService = Depends(get_department_service)
 ) -> Union[DepartmentRead, Exception]:
     """
-        Создание отделов компании.
+        Создание отдела компании.
 
         Args:
             company_id (int): Идентификатор компании
             data (DepartmentCreate): Входные данные для создания отделов
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (DepartmentService): Сервис для создания отдела.
             
@@ -35,17 +36,18 @@ async def create_department(
             DepartmentRead: Схема для получения данных отдела.
     """
 
-    result = await service.create_department(session, user, company_id, data)
+    result = await service.create_department(session, user, user.company_id, data)
 
     return DepartmentRead.model_validate(result)
 
-@department_router.patch('/{company_id}/departments/{department_id}', response_model=DepartmentRead)
-async def change_department_head_user(
-    company_id: int,
+@department_router.patch(
+    '/{department_id}', response_model=DepartmentRead
+)
+async def set_department_head(
     department_id: int,
     user_id: int,
-    session: AsyncGenerator = Depends(get_session),
-    user: User = Depends(check_company),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(validate_company_presence),
     service: DepartmentService = Depends(get_department_service)
 ) -> Union[DepartmentRead, Exception]:
     """
@@ -55,7 +57,7 @@ async def change_department_head_user(
             company_id (int): Идентификатор компании
             department_id (int): Идентификатор отдела
             user_id (int): Идентификатор пользователя
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (DepartmentService): Сервис для создания отдела.
             
@@ -63,16 +65,17 @@ async def change_department_head_user(
             DepartmentRead: Схема для получения данных отдела.
     """
 
-    result = await service.change_head_user(session, user, company_id, department_id, user_id)
+    result = await service.change_head_user(
+        session, user, user.company_id, department_id, user_id
+    )
 
     return DepartmentRead.model_validate(result)
 
-@department_router.delete('/{company_id}/departments/{department_id}', status_code=status.HTTP_204_NO_CONTENT)
+@department_router.delete('/{department_id}', status_code=204)
 async def delete_department(
-    company_id: int,
     department_id: int,
-    session: AsyncGenerator = Depends(get_session),
-    user: User = Depends(check_company),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(validate_company_presence),
     service: DepartmentService = Depends(get_department_service)
 ) -> None:
     """
@@ -81,9 +84,9 @@ async def delete_department(
         Args:
             company_id (int): Идентификатор компании
             department_id (int): Идентификатор отдела
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             user (User): Получение текущего пользователя.
             service (DepartmentService): Сервис для создания отдела.
     """
 
-    await service.delete_department(session, user, company_id, department_id)
+    await service.delete_department(session, user, user.company_id, department_id)

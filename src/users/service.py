@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
-from typing import AsyncGenerator, Union
+from typing import Union
 
 from fastapi import HTTPException, status
 from fastapi_users.exceptions import UserAlreadyExists
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from company.models.department import Department
 from rating.schemas import AvgRatingRead
@@ -32,13 +33,13 @@ class UserService:
         self.user_manager = user_manager
 
     async def register_user(
-        self, session: AsyncGenerator, data: UserRegistration
+        self, session: AsyncSession, data: UserRegistration
     ) -> Union[None, UserAlreadyExists, HTTPException]:
         """
             Создаёт нового пользователя.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 data (UserRegistration): Входные данные для регистрации пользователя.
             
         """
@@ -79,13 +80,13 @@ class UserService:
         return UserInformation.model_validate(user)
     
     async def change_user(
-        self, session: AsyncGenerator, user: User, data: UserChange
+        self, session: AsyncSession, user: User, data: UserChange
     ) -> Union[User, HTTPException]:
         """
             Изменение данных пользователя.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 data (UserChange): Входные данные для изменения данных пользователя
 
@@ -122,12 +123,12 @@ class UserService:
 
         return user
     
-    async def delete_user(self, session: AsyncGenerator, user: User) -> None:
+    async def delete_user(self, session: AsyncSession, user: User) -> None:
         """
             Удаление пользователя.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
             
         """
@@ -140,13 +141,13 @@ class UserService:
         await session.commit()
 
     async def change_role(
-        self, session: AsyncGenerator, user: User, user_id: int, role: RoleType
+        self, session: AsyncSession, user: User, user_id: int, role: RoleType
     ) -> Union[User, HTTPException]:
         """
             Изменение роли пользователя.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 user_id (int): Идентификатор пользователя.
                 role (RoleType): Тип роли в команде
@@ -182,13 +183,13 @@ class UserService:
         return target_user
     
     async def delete_department(
-        self, session: AsyncGenerator, user: User, user_id: int
+        self, session: AsyncSession, user: User, user_id: int
     ) -> Union[User, HTTPException]:
         """
             Удаление пользователя из отдела.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 user_id (int): Идентификатор пользователя.
 
@@ -227,12 +228,12 @@ class UserService:
 
         return target_user
     
-    async def get_rating(self, session: AsyncGenerator, user: User) -> list[Rating]:
+    async def get_rating(self, session: AsyncSession, user: User) -> list[Rating]:
         """
             Получение оценок задач пользователя.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
 
             Returns:
@@ -248,13 +249,13 @@ class UserService:
         return result.scalars().all()
     
     async def get_avg_rating(
-        self, session: AsyncGenerator, user: User
+        self, session: AsyncSession, user: User
     ) -> AvgRatingRead:
         """
             Получение средних оценок задач пользователя.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
 
             Returns:
@@ -285,13 +286,13 @@ class UserService:
         return AvgRatingRead(**row)
     
     async def get_my_tasks(
-        self, user: User, session: AsyncGenerator
+        self, user: User, session: AsyncSession
     ) -> list[Task]:
         """
             Получение назначенных задач.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
 
             Returns:
@@ -305,13 +306,13 @@ class UserService:
         return result
     
     async def get_owner_tasks(
-        self, user: User, session: AsyncGenerator
+        self, user: User, session: AsyncSession
     ):
         """
             Получение выданных задач.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
 
             Returns:

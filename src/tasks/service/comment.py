@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Union
+from typing import Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from users.models import User
 from tasks.models.task import Task
@@ -17,14 +18,14 @@ class CommentService:
     """
 
     async def create_comment(
-        self, user: User, session: AsyncGenerator, task_id: int, data: CommentCreate 
+        self, user: User, session: AsyncSession, task_id: int, data: CommentCreate 
     ) -> Union[Comment, HTTPException]:
         """
             Создаёт нового комментария.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 task_id (int): Идентификатор задачи
                 data (CommentCreate): Входные данные для создания комментария.
             
@@ -71,14 +72,14 @@ class CommentService:
             )
     
     async def delete_comment(
-        self, user: User, session: AsyncGenerator, task_id: int, comment_id: int
+        self, user: User, session: AsyncSession, task_id: int, comment_id: int
     ) -> Union[None, HTTPException]:
         """
             Удаление комментария.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 task_id (int): Идентификатор задачи
                 comment_id (int): Идентификатор комментария.
         """

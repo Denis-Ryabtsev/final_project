@@ -1,6 +1,6 @@
 from datetime import date, time
-from typing import Optional
-from pydantic import BaseModel, field_validator
+from typing import Annotated, Optional
+from pydantic import BaseModel, Field, constr, field_validator
 
 
 class MeetingCreate(BaseModel):
@@ -14,8 +14,8 @@ class MeetingCreate(BaseModel):
         - meeting_time: Время встречи.
     """
 
-    title: str
-    description: str
+    title: str = Field(min_length=4, max_length=40)
+    description: str = Field(min_length=0, max_length=400)
     meeting_date: date
     meeting_time: time
 
@@ -45,6 +45,8 @@ class MeetingRead(BaseModel):
     }
 
 
+StrippedStr = Annotated[str, constr(strip_whitespace=True)]
+
 class MeetingChange(BaseModel):
     """
         Схема для изменения встреч
@@ -56,23 +58,15 @@ class MeetingChange(BaseModel):
         - meeting_time: Время встречи.
     """
 
-    title: Optional[str] = None
-    description: Optional[str] = None
-
+    title: Optional[StrippedStr] = None
+    description: Optional[StrippedStr] = None
     meeting_date: Optional[date] = None
     meeting_time: Optional[time] = None
 
-    @field_validator('meeting_date', mode='before')
+    @field_validator("meeting_date", "meeting_time", mode="before")
     @classmethod
-    def parse_optional_date(cls, v):
-        if v == '':
-            return None
-        return v
-
-    @field_validator('meeting_time', mode='before')
-    @classmethod
-    def parse_optional_time(cls, v):
-        if v == '':
+    def empty_string_to_none(cls, v):
+        if isinstance(v, str) and not v.strip():
             return None
         return v
 
@@ -82,7 +76,8 @@ class MeetingResponse(BaseModel):
         Схема для возврата сообщения
 
         Fields:
-        - message: Тело сообщения
+        - message: Тело сообщения. Используется при успешном 
+        добавлении пользователя на встречу
     """
 
     message: str

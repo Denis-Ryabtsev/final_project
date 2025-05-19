@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Union
+from typing import Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from company.models.department import Department
 from users.models import User
@@ -20,13 +21,13 @@ class CompanyService:
     """
 
     async def create_company(
-        self, session: AsyncGenerator, data: CompanyCreate, user: User
+        self, session: AsyncSession, data: CompanyCreate, user: User
     ) -> Union[Company, HTTPException]:
         """
             Создание компании.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 data (CompanyCreate): Входные данные для создания компании.
 
             Returns:
@@ -60,13 +61,13 @@ class CompanyService:
             )
         
     async def add_user(
-        self, session: AsyncGenerator, company_id: int, user_id: int
+        self, session: AsyncSession, company_id: int, user_id: int
     ) -> Union[User, HTTPException]:
         """
             Добавление пользователей.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 company_id (int): Идентификатор компании
                 user_id (int): Идентификатор пользователя
 
@@ -101,13 +102,13 @@ class CompanyService:
             )
     
     async def delete_user(
-        self, session: AsyncGenerator, company_id: int, user_id: int
+        self, session: AsyncSession, company_id: int, user_id: int
     ) -> Union[User, HTTPException]:
         """
             Удаление пользователей из компании.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 company_id (int): Идентификатор компании
                 user_id (int): Идентификатор пользователя
 
@@ -143,13 +144,13 @@ class CompanyService:
             )
         
     async def delete_company(
-        self, session: AsyncGenerator, company_id: int
+        self, session: AsyncSession, company_id: int
     ) -> Union[None, HTTPException]:
         """
             Удаление компании.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 company_id (int): Идентификатор компании
         """
 
@@ -175,13 +176,13 @@ class CompanyService:
             )
         
     async def get_company_users(
-        self, session: AsyncGenerator, user: User, company_id: int
+        self, session: AsyncSession, user: User, company_id: int
     ) -> UserInformation:
         """
             Получение списка пользователей.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 company_id (int): Идентификатор компании
                 user (User): Объект пользователя
 

@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Union
+from typing import Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from users.models import User
 from meeting.schemas import MeetingCreate, MeetingChange
@@ -19,14 +20,14 @@ class MeetingService:
     """
 
     async def create_meeting(
-        self, user: User, session: AsyncGenerator, data: MeetingCreate
+        self, user: User, session: AsyncSession, data: MeetingCreate
     ) -> Union[Meeting, HTTPException]:
         """
             Создаёт новую встречу.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 data (MeetingCreate): Входныеы данные для создания встречи
 
             Returns:
@@ -51,14 +52,14 @@ class MeetingService:
             )
         
     async def delete_meeting(
-        self, user: User, session: AsyncGenerator, meeting_id: int
+        self, user: User, session: AsyncSession, meeting_id: int
     ) -> Union[None, HTTPException]:
         """
             Удаление встречи.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 meeting_id (int): Идентификатор встречи
         """
 
@@ -85,14 +86,14 @@ class MeetingService:
             )
         
     async def change_meeting(
-        self, user: User, session: AsyncGenerator, meeting_id: int, data: MeetingChange
+        self, user: User, session: AsyncSession, meeting_id: int, data: MeetingChange
     ) -> Union[Meeting, HTTPException]:
         """
             Изменение встречи.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 meeting_id (int): Идентификатор встречи
                 data (MeetingChange): Входные данные для изменения встречи
                 
@@ -135,14 +136,14 @@ class MeetingService:
             )
         
     async def add_user_meeting(
-        self, user: User, session: AsyncGenerator, meeting_id: int, user_id: int
+        self, user: User, session: AsyncSession, meeting_id: int, user_id: int
     ) -> Union[None, HTTPException]:
         """
             Добавление пользователей на встречу.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 meeting_id (int): Идентификатор встречи
                 user_id (int): Идентификатор пользователя
         """
@@ -206,15 +207,13 @@ class MeetingService:
                 detail=str(e)
             )
         
-    async def get_meeting(
-        self, user: User, session: AsyncGenerator, company_id: int
-    ) -> list[Meeting]:
+    async def get_meeting(self, user: User, session: AsyncSession) -> list[Meeting]:
         """
             Добавление пользователей на встречу.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
             
             Returns:
                 result (list[Meeting]): Список встреч.

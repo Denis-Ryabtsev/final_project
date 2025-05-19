@@ -1,4 +1,5 @@
 from sqladmin import ModelView
+
 from users.models import User
 from company.models.company import Company
 from tasks.models.task import Task

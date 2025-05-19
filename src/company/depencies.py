@@ -15,13 +15,13 @@ def get_department_service() -> DepartmentService:
     return DepartmentService()
 
 #   проверка а принадлежность к компании
-def check_company(
+def validate_company_presence(
     user: User = Depends(check_role)
 ):
     if not user.company_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Создавать оргструктуру можно при наличии команды'
+            detail='Создавать оргструктуру можно при наличии компании'
         )
     
     return user

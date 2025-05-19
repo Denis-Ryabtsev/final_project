@@ -1,5 +1,7 @@
-from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status
+from typing import Union
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_session
 from users.models import User
@@ -11,7 +13,7 @@ from tasks.depencies import get_comment_service
 
 
 comment_router = APIRouter(
-    prefix='/companies/tasks/{task_id}/comments', tags=['Comments operations']
+    prefix='/companies/tasks/{task_id}/comments', tags=['Comments']
 )
 
 @comment_router.post('', response_model=CommentRead)
@@ -19,16 +21,16 @@ async def comment_create(
     task_id: int,
     data: CommentCreate,
     user: User = Depends(get_user),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: CommentService = Depends(get_comment_service)
 ) -> Union[CommentRead, Exception]:
     """
-        Создаёт нового комментария.
+        Создаёт новый комментарий.
 
         Args:
             data (CommentCreate): Входные данные для создания комментария.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (CommentService): Сервис для создания комментария.
         
         Returns:
@@ -39,12 +41,12 @@ async def comment_create(
 
     return CommentRead.model_validate(result)
 
-@comment_router.delete('/{comment_id}', status_code=status.HTTP_204_NO_CONTENT)
+@comment_router.delete('/{comment_id}', status_code=204)
 async def comment_delete(
     task_id: int,
     comment_id: int,
     user: User = Depends(check_company),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: CommentService = Depends(get_comment_service)
 ) -> None:
     """
@@ -54,7 +56,7 @@ async def comment_delete(
             task_id (int): Идентификатор задачи.
             comment_id (int): Идентификатор комментария.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (CommentService): Сервис для создания комментария.
     """
 

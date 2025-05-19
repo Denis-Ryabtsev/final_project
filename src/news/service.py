@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Union
+from typing import Union
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from users.models import User
 from news.models import News
@@ -12,13 +13,13 @@ from news.schemas import NewsCreate
 class NewsService:
     
     async def create_news(
-        self, session: AsyncGenerator, user: User, company_id: int, data: NewsCreate
+        self, session: AsyncSession, user: User, company_id: int, data: NewsCreate
     ) -> Union[News, HTTPException]:
         """
             Создание новости.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 company_id (int): Идентификатор компании
                 data (NewsCreate): Входные данные для создания новости
@@ -54,13 +55,13 @@ class NewsService:
             )
     
     async def delete_news(
-        self, session: AsyncGenerator, user: User, company_id: int, news_id: int
+        self, session: AsyncSession, user: User, company_id: int, news_id: int
     ) -> Union[None, HTTPException]:
         """
             Удаление новости.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 company_id (int): Идентификатор компании
                 news_id (int): Идентификатор новости
@@ -88,14 +89,12 @@ class NewsService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e))
     
-    async def get_news(
-        self, session: AsyncGenerator, company_id: int
-    ) -> list[News]:
+    async def get_news(self, session: AsyncSession, company_id: int) -> list[News]:
         """
             Получение списка новостей.
 
             Args:
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 user (User): Получение текущего пользователя.
                 company_id (int): Идентификатор компании
                 news_id (int): Идентификатор новости

@@ -1,6 +1,7 @@
-from typing import Union, AsyncGenerator
+from typing import Union
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_session
 from users.models import User
@@ -10,7 +11,7 @@ from news.service import NewsService
 
 
 news_router = APIRouter(
-    prefix='/companies', tags=['News operations']
+    prefix='/companies', tags=['News']
 )
 
 @news_router.post('/{company_id}/news', response_model=NewsRead)
@@ -18,7 +19,7 @@ async def create_news(
     company_id: int,
     data: NewsCreate,
     user: User = Depends(check_company_news),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: NewsService = Depends(get_news_service)
 ) -> Union[NewsRead, Exception]:
     """
@@ -28,7 +29,7 @@ async def create_news(
             company_id (int): Идентификатор компании
             data (NewsCreate): Входные данные для создания новости.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (NewsService): Сервис для создания новости.
             
         Returns:
@@ -39,12 +40,12 @@ async def create_news(
 
     return NewsRead.model_validate(news)
 
-@news_router.delete('/{company_id}/news/{news_id}', status_code=status.HTTP_204_NO_CONTENT)
+@news_router.delete('/{company_id}/news/{news_id}', status_code=204)
 async def delete_news(
     company_id: int,
     news_id: int,
     user: User = Depends(check_company_news),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: NewsService = Depends(get_news_service)
 ) -> None:
     """
@@ -54,7 +55,7 @@ async def delete_news(
             company_id (int): Идентификатор компании
             news_id (int): Идентификатор новости.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (NewsService): Сервис для создания новости.
     """
 
@@ -64,7 +65,7 @@ async def delete_news(
 async def get_news(
     company_id: int,
     user: User = Depends(check_company_news),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: NewsService = Depends(get_news_service)
 ) -> list[NewsRead]:
     """
@@ -73,7 +74,7 @@ async def get_news(
         Args:
             company_id (int): Идентификатор компании
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (NewsService): Сервис для создания новости.
         
         Returns:

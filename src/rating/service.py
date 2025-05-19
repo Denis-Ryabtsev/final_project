@@ -1,7 +1,8 @@
-from typing import AsyncGenerator, Union
+from typing import Union
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from users.models import User
 from tasks.models.task import Task, TaskStatus
@@ -16,14 +17,14 @@ class RatingService:
     """
 
     async def create_rating(
-        self, user: User, session: AsyncGenerator, task_id: int, data: RatingCreate
-    ) -> Union[RatingCreate, HTTPException]:
+        self, user: User, session: AsyncSession, task_id: int, data: RatingCreate
+    ) -> Union[Rating, HTTPException]:
         """
             Создаёт новую оценку.
 
             Args:
                 user (User): Получение текущего пользователя.
-                session (AsyncGenerator): SQLAlchemy-сессия.
+                session (AsyncSession): SQLAlchemy-сессия.
                 task_id (int): Идентификатор задачи
                 data (RatingCreate): Входные данные для создания оценки.
             

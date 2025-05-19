@@ -1,31 +1,26 @@
-from typing import Union, AsyncGenerator
-from fastapi import APIRouter, Depends, status, Response
+from typing import Union
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_session
 from users.models import User
-from users.schemas import UserInformation
-from core_depencies import get_user
-from company.schemas.company import CompanyRead, CompanyCreate
-from company.depencies import get_company_service, check_company
-from company.service.company import CompanyService
-from core_depencies import check_role
+from company.depencies import validate_company_presence
 from meeting.schemas import MeetingCreate, MeetingRead, MeetingChange, MeetingResponse
 from meeting.depencies import check_company_role_meeting
 from meeting.service import MeetingService
 from meeting.depencies import get_meeting_service
-# from calendars.schemas
-# from calendars.schemas import CalendarRead
 
 
 meeting_router = APIRouter(
-    prefix='/meeting', tags=['Meeting operations']
+    prefix='/meeting', tags=['Meetings']
 )
 
 @meeting_router.post('', response_model=MeetingRead)
 async def create_meeting(
     data: MeetingCreate,
     user: User = Depends(check_company_role_meeting),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: MeetingService = Depends(get_meeting_service)
 ) -> Union[MeetingRead, Exception]:
     """
@@ -34,7 +29,7 @@ async def create_meeting(
         Args:
             data (MeetingCreate): Входные данные для создания встречи.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (MeetingService): Сервис для создания встреч.
             
         Returns:
@@ -45,11 +40,11 @@ async def create_meeting(
 
     return MeetingRead.model_validate(result)
 
-@meeting_router.delete('/{meeting_id}', status_code=status.HTTP_204_NO_CONTENT)
+@meeting_router.delete('/{meeting_id}', status_code=204)
 async def delete_meeting(
     meeting_id: int,
     user: User = Depends(check_company_role_meeting),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: MeetingService = Depends(get_meeting_service)
 ) -> None:
     """
@@ -58,7 +53,7 @@ async def delete_meeting(
         Args:
             meeting_id (int): Идентификатор встречи.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (MeetingService): Сервис для создания встреч.
     """
 
@@ -69,7 +64,7 @@ async def change_meeting(
     meeting_id: int,
     data: MeetingChange,
     user: User = Depends(check_company_role_meeting),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: MeetingService = Depends(get_meeting_service)
 ) -> Union[MeetingRead, Exception]:
     """
@@ -79,7 +74,7 @@ async def change_meeting(
             meeting_id (int): Идентификатор встречи.
             data (MeetingChange): Входные данные для изменения встречи.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (MeetingService): Сервис для создания встреч.
             
         Returns:
@@ -94,7 +89,7 @@ async def add_user_meeting(
     meeting_id: int,
     user_id: int,
     user: User = Depends(check_company_role_meeting),
-    session: AsyncGenerator = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     service: MeetingService = Depends(get_meeting_service)
 ) -> Union[MeetingResponse, Exception]:
     """
@@ -104,7 +99,7 @@ async def add_user_meeting(
             meeting_id (int): Идентификатор встречи.
             user_id (int): Идентификатор пользователя.
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (MeetingService): Сервис для создания встреч.
             
         Returns:
@@ -116,8 +111,8 @@ async def add_user_meeting(
 
 @meeting_router.get('', response_model=list[MeetingRead])
 async def get_owner_meeting(
-    user: User = Depends(check_company),
-    session: AsyncGenerator = Depends(get_session),
+    user: User = Depends(validate_company_presence),
+    session: AsyncSession = Depends(get_session),
     service: MeetingService = Depends(get_meeting_service)
 ) -> list[MeetingRead]:
     """
@@ -125,7 +120,7 @@ async def get_owner_meeting(
 
         Args:
             user (User): Получение текущего пользователя.
-            session (AsyncGenerator): SQLAlchemy-сессия.
+            session (AsyncSession): SQLAlchemy-сессия.
             service (MeetingService): Сервис для создания встреч.
             
         Returns:
