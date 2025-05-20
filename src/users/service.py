@@ -65,19 +65,6 @@ class UserService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f'Пользователь {data['email']} уже существует'
             )
-        
-    async def get_user(self, user: User) -> User:
-        """
-            Получение данных пользователя.
-
-            Args:
-                user (User): Получение текущего пользователя.
-
-            Returns:
-                user (User): Получение текущего пользователя.
-        """
-
-        return UserInformation.model_validate(user)
     
     async def change_user(
         self, session: AsyncSession, user: User, data: UserChange
@@ -244,9 +231,9 @@ class UserService:
         query = (
             select(Rating).where(Rating.owner_id == user.id)
         )
-        result = await session.execute(query)
+        user_ratings = await session.execute(query)
 
-        return result.scalars().all()
+        return user_ratings.scalars().all()
     
     async def get_avg_rating(
         self, session: AsyncSession, user: User
@@ -296,14 +283,14 @@ class UserService:
                 user (User): Получение текущего пользователя.
 
             Returns:
-                result (list[Task]): Список назначенных задач.
+                user_tasks (list[Task]): Список назначенных задач.
             
         """
 
         query = select(Task).options(selectinload(Task.comments)).where(Task.target_id == user.id)
-        result = (await session.execute(query)).scalars().all()
+        user_tasks = (await session.execute(query)).scalars().all()
 
-        return result
+        return user_tasks
     
     async def get_owner_tasks(
         self, user: User, session: AsyncSession
@@ -321,6 +308,6 @@ class UserService:
         """
 
         query = select(Task).options(selectinload(Task.comments)).where(Task.owner_id == user.id)
-        result = (await session.execute(query)).scalars().all()
+        owner_tasks = (await session.execute(query)).scalars().all()
 
-        return result
+        return owner_tasks

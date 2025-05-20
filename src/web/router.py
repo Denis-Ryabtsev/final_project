@@ -41,7 +41,7 @@ from company.schemas.company import CompanyCreate
 from meeting.depencies import get_meeting_service
 
 
-router = APIRouter()
+router = APIRouter(tags=['Jinja endpoints'])
 
 @router.get("/", response_class=HTMLResponse)
 async def index_page(

@@ -21,20 +21,19 @@ class UserRegistration(BaseModel):
     """
 
     first_name: str = Field(
-        example='Иван', description='Введите свое имя', min_length=2, alias='name'
+        example='Иван', description='Введите свое имя', 
+        min_length=2, max_length=20, alias='name'
     )
     last_name: str = Field(
         example='Васильев', description='Введите свою фамилию', 
-        min_length=2, alias='surname'
+        min_length=2, max_length=20, alias='surname'
     )
     company_role: RoleType = Field(alias='role')
     company_code: Optional[str] = Field(
         None, example='aaaa', description='Введите код компании', 
         min_length=4, max_length=4, alias='code'
     )
-    email: EmailStr = Field(
-        example='user@mail.ru'
-    )
+    email: EmailStr = Field(example='user@mail.ru')
     password: str = Field(
         description='Пароль должен состоять минимум из 6 символов', min_length=6
     )
@@ -118,8 +117,8 @@ class UserChange(BaseModel):
 
     """
 
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: Optional[str] = Field(None, min_length=2, max_length=20)
+    last_name: Optional[str] = Field(None, min_length=2, max_length=20)
     company_role: Optional[RoleType] = None
     email: Optional[EmailStr] = None
     company_code: Optional[str] = None

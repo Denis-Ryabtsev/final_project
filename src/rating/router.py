@@ -23,7 +23,7 @@ async def create_rating(
     service: RatingService = Depends(get_rating_service)
 ) -> Union[RatingRead, Exception]:
     """
-        Создаёт оценку задаче.
+        Создание оценки задачи.
 
         Args:
             data (RatingCreate): Входные данные для создания оценки.
@@ -35,6 +35,6 @@ async def create_rating(
             RatingRead: Схема для вывода созданной оценки.
     """
 
-    result = await service.create_rating(user, session, task_id, data)
+    created_rate = await service.create_rating(user, session, task_id, data)
 
-    return RatingRead.model_validate(result)
+    return RatingRead.model_validate(created_rate)

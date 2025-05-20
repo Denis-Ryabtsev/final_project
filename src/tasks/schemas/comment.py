@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CommentCreate(BaseModel):
@@ -9,7 +9,7 @@ class CommentCreate(BaseModel):
         - description: Тело комментария.
     """
 
-    description: str
+    description: str = Field(max_length=400)
 
 
 class CommentRead(BaseModel):

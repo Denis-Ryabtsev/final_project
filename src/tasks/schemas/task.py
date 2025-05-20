@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from tasks.models.task import TaskStatus
 
@@ -50,8 +50,8 @@ class TaskCreate(BaseModel):
     target_id: int
     start_date: datetime.date
     end_date: datetime.date
-    title: str
-    description: str
+    title: str = Field(min_length=4, max_length=40)
+    description: str = Field(max_length=400)
 
 
 class TaskChange(BaseModel):
@@ -72,8 +72,8 @@ class TaskChange(BaseModel):
     target_id: Optional[int] = None
     start_date: Optional[datetime.date] = None
     end_date: Optional[datetime.date] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: Optional[str] = Field(None, min_length=4, max_length=40)
+    description: Optional[str] = Field(None, max_length=400)
     status: Optional[TaskStatus] = None
 
 

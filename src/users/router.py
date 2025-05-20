@@ -46,23 +46,19 @@ async def reg_user(
 
 @operation_user.get('/me', response_model=UserInformation)
 async def get_user(
-    user: User = Depends(fastapi_users.current_user()),
-    service: UserService = Depends(get_user_service)
+    user: User = Depends(fastapi_users.current_user())
 ) -> Union[UserInformation, Exception]:
     """
         Получение информации о профиле.
 
         Args:
             user (User): Получение текущего пользователя.
-            service (UserService): Сервис для создания пользователя.
             
         Returns:
             UserInformation: Информация о пользователе.
     """
-    
-    my_profile = await service.get_user(user)
 
-    return my_profile
+    return UserInformation.model_validate(user)
 
 @operation_user.patch('/me', response_model=UserInformation)
 async def change_user(
@@ -72,7 +68,7 @@ async def change_user(
     service: UserService = Depends(get_user_service)
 ) -> Union[UserInformation, Exception]:
     """
-        Получение информации о профиле.
+        Изменение профиля пользователя.
 
         Args:
             data (UserChange): Входные данные для изменения пользователя.
@@ -84,9 +80,9 @@ async def change_user(
             UserInformation: Информация о пользователе.
     """
     
-    result = await service.change_user(session, user, data)
+    changed_user = await service.change_user(session, user, data)
 
-    return result
+    return changed_user
 
 @operation_user.delete('/me', status_code=204)
 async def delete_user(
@@ -131,9 +127,9 @@ async def change_role(
             UserInformation: Информация о пользователе.
     """
     
-    result = await service.change_role(session, user, user_id, role)
+    changed_user = await service.change_role(session, user, user_id, role)
 
-    return UserInformation.model_validate(result)
+    return UserInformation.model_validate(changed_user)
 
 @operation_user.patch('/{user_id}/department', response_model=UserInformation)
 async def delete_department(
@@ -155,9 +151,9 @@ async def delete_department(
             UserInformation: Информация о пользователе.
     """
 
-    result = await service.delete_department(session, user, user_id)
+    changed_user = await service.delete_department(session, user, user_id)
 
-    return result
+    return changed_user
 
 @operation_user.get('/me/rating', response_model=list[RatingReadUser])
 async def get_rating(
@@ -177,9 +173,9 @@ async def get_rating(
             RatingReadUser (list[RatingReadUser]): Информация об оценках задач.
     """
 
-    result = await service.get_rating(session, user)
+    my_rating = await service.get_rating(session, user)
 
-    return [RatingReadUser.model_validate(item) for item in result]
+    return [RatingReadUser.model_validate(item) for item in my_rating]
 
 @operation_user.get("/me/ratings/average", response_model=AvgRatingRead)
 async def get_quarter_avg(
@@ -220,9 +216,9 @@ async def get_my_tasks(
             
     """
     
-    result = await service.get_my_tasks(user, session)
+    user_tasks = await service.get_my_tasks(user, session)
 
-    return TaskRead.model_validate(result)
+    return TaskRead.model_validate(user_tasks)
 
 @operation_user.get('/me/tasks_owner', response_model=list[TaskRead])
 async def get_my_tasks(
@@ -242,6 +238,6 @@ async def get_my_tasks(
         
     """
     
-    result = await service.get_owner_tasks(user, session)
+    owner_tasks = await service.get_owner_tasks(user, session)
 
-    return TaskRead.model_validate(result)
+    return TaskRead.model_validate(owner_tasks)

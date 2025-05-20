@@ -25,7 +25,7 @@ async def comment_create(
     service: CommentService = Depends(get_comment_service)
 ) -> Union[CommentRead, Exception]:
     """
-        Создаёт новый комментарий.
+        Создание нового комментария.
 
         Args:
             data (CommentCreate): Входные данные для создания комментария.
@@ -37,9 +37,9 @@ async def comment_create(
             CommentRead: Информация о комментарии.
     """
 
-    result = await service.create_comment(user, session, task_id, data)
+    created_comment = await service.create_comment(user, session, task_id, data)
 
-    return CommentRead.model_validate(result)
+    return CommentRead.model_validate(created_comment)
 
 @comment_router.delete('/{comment_id}', status_code=204)
 async def comment_delete(

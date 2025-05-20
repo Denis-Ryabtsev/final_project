@@ -34,20 +34,20 @@ class NewsService:
                 detail='Новости можно выставлять только в компании, к которой прикреплен'
             )
         
-        data = {
+        created_news = {
             'owner_id': user.id,
             'company_id': user.company_id,
             'title': data.title,
             'description': data.description
         }
-        data = News(**data)
+        created_news = News(**created_news)
 
         try:
-            session.add(data)
+            session.add(created_news)
             await session.commit()
-            await session.refresh(data)
+            await session.refresh(created_news)
 
-            return data
+            return created_news
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -104,6 +104,6 @@ class NewsService:
         """
 
         query = select(News).where(News.company_id == company_id)
-        result = (await session.execute(query)).scalars().all()
+        company_news = (await session.execute(query)).scalars().all()
 
-        return result
+        return company_news

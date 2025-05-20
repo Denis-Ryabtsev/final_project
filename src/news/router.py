@@ -23,7 +23,7 @@ async def create_news(
     service: NewsService = Depends(get_news_service)
 ) -> Union[NewsRead, Exception]:
     """
-        Создаёт новость.
+        Создание новости.
 
         Args:
             company_id (int): Идентификатор компании
@@ -49,7 +49,7 @@ async def delete_news(
     service: NewsService = Depends(get_news_service)
 ) -> None:
     """
-        Удаляет новость.
+        Удаление новости.
 
         Args:
             company_id (int): Идентификатор компании
@@ -78,9 +78,9 @@ async def get_news(
             service (NewsService): Сервис для создания новости.
         
         Returns:
-            result (list[NewsRead]): Список новостей.
+            company_news (list[NewsRead]): Список новостей.
     """
 
-    result = await service.get_news(session, company_id)
+    company_news = await service.get_news(session, company_id)
 
-    return NewsRead.model_validate(result)
+    return NewsRead.model_validate(company_news)

@@ -1,6 +1,6 @@
 import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RatingCreate(BaseModel):
@@ -13,9 +13,9 @@ class RatingCreate(BaseModel):
         - score_complete: Оценка полноты выполнения.
     """
 
-    score_date: int
-    score_quality: int
-    score_complete: int
+    score_date: int = Field(ge=1, lt=6)
+    score_quality: int = Field(ge=1, lt=6)
+    score_complete: int = Field(ge=1, lt=6)
 
 
 class RatingRead(BaseModel):

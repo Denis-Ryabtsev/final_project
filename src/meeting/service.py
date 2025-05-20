@@ -187,7 +187,7 @@ class MeetingService:
             )
 
         try:
-            data = {
+            calendar_data = {
                 'user_id': user_id,
                 'event_date': target_meeting.meeting_date,
                 'event_time': target_meeting.meeting_time,
@@ -195,11 +195,11 @@ class MeetingService:
                 'type_event': CalendarStatus.meeting,
                 'meeting_id': target_meeting.id
             }
-            data = Calendar(**data)
+            calendar_data = Calendar(**calendar_data)
 
-            session.add(data)
+            session.add(calendar_data)
             await session.commit()
-            await session.refresh(data)
+            await session.refresh(calendar_data)
 
         except Exception as e:
             raise HTTPException(
@@ -209,17 +209,17 @@ class MeetingService:
         
     async def get_meeting(self, user: User, session: AsyncSession) -> list[Meeting]:
         """
-            Добавление пользователей на встречу.
+            Получение созданных встреч.
 
             Args:
                 user (User): Получение текущего пользователя.
                 session (AsyncSession): SQLAlchemy-сессия.
             
             Returns:
-                result (list[Meeting]): Список встреч.
+                meetings_created (list[Meeting]): Список встреч.
         """
         
         query = select(Meeting).where(Meeting.organizer_id == user.id)
-        result = (await session.execute(query)).scalars().all()
+        meetings_created = (await session.execute(query)).scalars().all()
 
-        return result
+        return meetings_created

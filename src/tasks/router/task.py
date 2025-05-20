@@ -24,7 +24,7 @@ async def create_task(
     service: TaskService = Depends(get_task_service)
 ) -> Union[TaskRead, Exception]:
     """
-        Создаёт новой задачи и занесения ее в календарь пользователя.
+        Создание новой задачи и занесения ее в календарь пользователя.
 
         Args:
             data (TaskCreate): Входные данные для создания задачи.
@@ -36,10 +36,10 @@ async def create_task(
             TaskRead: Схема для получения созданной задачи.
     """
 
-    result = await service.create_task(user, session, data)
-    await service.add_task_calendar(session, result)
+    created_task = await service.create_task(user, session, data)
+    await service.add_task_calendar(session, created_task)
     
-    return TaskRead(**result)
+    return TaskRead(**created_task)
 
 @task_router.delete('/{task_id}', status_code=204)
 async def delete_task(
@@ -49,7 +49,7 @@ async def delete_task(
     service: TaskService = Depends(get_task_service)
 ) -> None:
     """
-        Создаёт новой задачи и занесения ее в календарь пользователя.
+        Удаления задачи
 
         Args:
             task_id (int): Идентификатор задачи.
@@ -62,14 +62,14 @@ async def delete_task(
 
 @task_router.patch('/{task_id}', response_model=TaskRead)
 async def change_task(
-    task_id: int,
     data: TaskChange,
+    task_id: int,
     user: User = Depends(check_company),
     session: AsyncSession = Depends(get_session),
     service: TaskService = Depends(get_task_service)
 ) -> Union[TaskRead, Exception]:
     """
-        Создаёт новой задачи и занесения ее в календарь пользователя.
+        Изменения задачи
 
         Args:
             task_id (int): Идентификатор задачи
@@ -82,20 +82,20 @@ async def change_task(
             TaskRead: Схема для получения созданной задачи.
     """
 
-    result = await service.change_task(user, session, data, task_id)
+    changed_task = await service.change_task(user, session, data, task_id)
 
-    return TaskRead.model_validate(result)
+    return TaskRead.model_validate(changed_task)
 
 @task_router.patch('/{task_id}/status', response_model=TaskRead)
 async def change_task_role(
-    task_id: int,
     task_status: TaskChangeRole,
+    task_id: int,
     user: User = Depends(get_user),
     session: AsyncSession = Depends(get_session),
     service: TaskService = Depends(get_task_service)
 ) -> Union[TaskRead, Exception]:
     """
-        Создаёт новой задачи и занесения ее в календарь пользователя.
+        Изменение статуса задачи
 
         Args:
             task_id (int): Идентификатор задачи
@@ -108,6 +108,6 @@ async def change_task_role(
             TaskRead: Схема для получения созданной задачи.
     """
 
-    result = await service.change_task_role(user, session, task_id, task_status)
+    changed_task = await service.change_task_role(user, session, task_id, task_status)
 
-    return TaskRead.model_validate(result)
+    return TaskRead.model_validate(changed_task)

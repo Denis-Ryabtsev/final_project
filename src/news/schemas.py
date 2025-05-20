@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class NewsCreate(BaseModel):
@@ -10,8 +10,8 @@ class NewsCreate(BaseModel):
         - description: Тело новости.
     """
 
-    title: str
-    description: str
+    title: str = Field(min_length=4, max_length=40)
+    description: str = Field(max_length=400)
 
 
 class NewsRead(BaseModel):
