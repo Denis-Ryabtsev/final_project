@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <meta charset="UTF-8">
+    <title>Система управления бизнесом</title>
+</head>
+<body>
+
+{% if not user %}
+<h2 id="form-title">Вход</h2>
+
+<div id="login-form">
+    <form action="/login" method="post">
+        <input type="email" name="username" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Пароль" required>
+        <button type="submit">Войти</button>
+    </form>
+</div>
+
+<div id="register-form" style="display: none;">
+    <form action="/register" method="post">
+        <input type="text" name="first_name" placeholder="Имя" required>
+        <input type="text" name="last_name" placeholder="Фамилия" required>
+        <select name="company_role" required>
+            <option value="employee">Сотрудник</option>
+            <option value="manager">Менеджер</option>
+            <option value="admin">Админ</option>
+        </select>
+        <input type="text" name="company_code" placeholder="Код компании (необязательно)">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Пароль" required>
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+</div>
+
+<p>
+    <button onclick="toggleForm()">Переключить форму</button>
+</p>
+
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% endif %}
+
+<script>
+function toggleForm() {
+    const login = document.getElementById("login-form");
+    const register = document.getElementById("register-form");
+    const title = document.getElementById("form-title");
+
+    if (login.style.display === "none") {
+        login.style.display = "block";
+        register.style.display = "none";
+        title.textContent = "Вход";
+    } else {
+        login.style.display = "none";
+        register.style.display = "block";
+        title.textContent = "Регистрация";
+    }
+}
+</script>
+
+{% else %}
+<h2>Добро пожаловать, {{ user.email }}</h2>
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% endif %}
+<p><a href="/logout">Выйти</a></p>
+
+<nav>
+    <a href="#users">Пользователи</a>
+    <a href="#tasks">Задачи</a>
+    <a href="#news">Новости</a>
+    <a href="#meetings">Совещания</a>
+    <a href="#rating">Оценки</a>
+    <a href="#company">Компании и отделы</a>
+    <a href="#calendar">Месячное и дневное расписание</a>
+</nav>
+
+<hr>
+
+{% set role_names = {
+    'admin': 'Администратор',
+    'manager': 'Менеджер',
+    'employee': 'Сотрудник'
+} %}
+
+<section id="profile">
+    <h3>Мой профиль</h3>
+    <ul>
+        <li><strong>Имя:</strong> {{ profile.first_name }}</li>
+        <li><strong>Фамилия:</strong> {{ profile.last_name }}</li>
+        <li><strong>Роль:</strong> {{ role_names[profile.company_role.name] }}</li>
+        <li><strong>ID компании:</strong> {{ profile.company_id or "—" }}</li>
+        <li><strong>ID отдела:</strong> {{ profile.department_id or "—" }}</li>
+    </ul>
+</section>
+
+<section id="edit-profile">
+    <div class="profile-form-container">
+        <h3>Редактировать профиль</h3>
+        <form action="/edit-profile" method="post" class="profile-form">
+            <div class="form-group">
+                <label for="first_name">Имя</label>
+                <input type="text" id="first_name" name="first_name" value="{{ profile.first_name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="last_name">Фамилия</label>
+                <input type="text" id="last_name" name="last_name" value="{{ profile.last_name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="company_role">Роль</label>
+                <select id="company_role" name="company_role" required>
+                    <option value="employee" {% if profile.company_role == "employee" %}selected{% endif %}>Сотрудник</option>
+                    <option value="manager" {% if profile.company_role == "manager" %}selected{% endif %}>Менеджер</option>
+                    <option value="admin" {% if profile.company_role == "admin" %}selected{% endif %}>Администратор</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="company_code">Код компании</label>
+                <input type="text" id="company_code" name="company_code" placeholder="Код компании">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ user.email }}" required>
+            </div>
+
+            <button type="submit">Сохранить</button>
+        </form>
+
+        <form action="/delete-profile" method="post">
+            <button type="submit" class="delete-btn" onclick="return confirm('Вы уверены, что хотите удалить аккаунт?');">Удалить аккаунт</button>
+        </form>
+    </div>
+</section>
+
+<section id="users">
+    <h3>Пользователи компании</h3>
+    {% if users %}
+        <style>
+            #users table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            #users th, #users td {
+                border: 1px solid #ccc;
+                padding: 8px;
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            #users select, #users button {
+                width: 100%;
+                padding: 4px;
+            }
+        </style>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID пользователя</th>
+                    <th>Email</th>
+                    <th>Имя</th>
+                    <th>Фамилия</th>
+                    <th>Роль</th>
+                    <th>ID компании</th>
+                    <th>ID отдела</th>
+                    <th>Действия</th>
+                    <th>Удаление из компании</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.first_name }}</td>
+                    <td>{{ u.last_name }}</td>
+                    <td>
+                        <form action="/change-role" method="post">
+                            <input type="hidden" name="user_id" value="{{ u.id }}">
+                            <select name="role">
+                                <option value="employee" {% if u.company_role == "employee" %}selected{% endif %}>Сотрудник</option>
+                                <option value="manager" {% if u.company_role == "manager" %}selected{% endif %}>Менеджер</option>
+                                <option value="admin" {% if u.company_role == "admin" %}selected{% endif %}>Админ</option>
+                            </select>
+                            <button type="submit">Изменить</button>
+                        </form>
+                    </td>
+                    <td>{{ u.company_id }}</td>
+                    <td>{{ u.department_id or "—" }}</td>
+                    <td>
+                        {% if u.department_id %}
+                            <form action="/remove-department" method="post">
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <button type="submit">Удалить из отдела</button>
+                            </form>
+                        {% else %}
+                            <span style="color: gray;">Не в отделе</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="/remove-user-from-company" method="post" onsubmit="return confirm('Удалить пользователя из компании?');">
+                            <input type="hidden" name="user_id" value="{{ u.id }}">
+                            <button type="submit" style="color: red;">Удалить из компании</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Нет пользователей для отображения.</p>
+    {% endif %}
+</section>
+
+<section id="company">
+    <h3>Создать компанию</h3>
+    <form action="/create-company" method="post">
+        <input type="text" name="name" placeholder="Название компании" required><br>
+        <input type="text" name="description" placeholder="Описание" required><br>
+        <input type="text" name="company_code" placeholder="Код приглашения (4 символа)" required minlength="4" maxlength="4"><br>
+        <input type="text" name="admin_code" placeholder="Код администратора (6 символов)" required minlength="6" maxlength="6"><br>
+        <button type="submit">Создать</button>
+    </form>
+</section>
+
+<section id="delete-company">
+    <h3>Удалить компанию</h3>
+    {% if profile.company_id %}
+        <form action="/delete-company" method="post" onsubmit="return confirm('Вы уверены, что хотите удалить компанию? Это действие необратимо.');">
+            <input type="hidden" name="company_id" value="{{ profile.company_id }}">
+            <button type="submit" style="color: red;">Удалить компанию</button>
+        </form>
+    {% else %}
+        <p>Вы не состоите в компании</p>
+    {% endif %}
+</section>
+
+<section id="create-department">
+    <h3>Создать отдел</h3>
+    <form action="/create-department" method="post">
+        <input type="text" name="name" placeholder="Название отдела" required>
+        <input type="number" name="head_user_id" placeholder="ID руководителя" required>
+        <button type="submit">Создать отдел</button>
+    </form>
+</section>
+
+<section id="change-department-head">
+  <h3>Сменить руководителя отдела</h3>
+  <form action="/change-department-head" method="post">
+      <input type="number" name="department_id" placeholder="ID отдела" required>
+      <input type="number" name="user_id" placeholder="ID нового руководителя" required>
+      <button type="submit">Сменить руководителя</button>
+  </form>
+</section>
+
+<section id="delete-department">
+    <h3>Удалить отдел</h3>
+    <form action="/delete-department" method="post">
+        <input type="number" name="department_id" placeholder="ID отдела для удаления" required>
+        <button type="submit" style="color: red;" onclick="return confirm('Удалить отдел? Все пользователи будут отвязаны.')">Удалить отдел</button>
+    </form>
+</section>
+
+<section id="add-user">
+    <h3>Добавить пользователя в команду</h3>
+    <form action="/add-user" method="post">
+        <input type="number" name="user_id" placeholder="ID пользователя" required>
+        <button type="submit">Добавить</button>
+    </form>
+</section>
+
+
+<section id="tasks">
+    <h3>Создать задачу</h3>
+    <form action="/create-task" method="post">
+        <input type="number" name="target_id" placeholder="ID исполнителя" required>
+        <input type="date" name="start_date" required>
+        <input type="date" name="end_date" required>
+        <input type="text" name="title" placeholder="Название задачи" required>
+        <textarea name="description" placeholder="Описание задачи" required></textarea>
+        <button type="submit">Создать</button>
+    </form>
+
+</section>
+
+<section id="my-tasks">
+    <h3>Мои задачи</h3>
+    {% if tasks.owner_tasks %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Описание</th>
+                    <th>Дата начала</th>
+                    <th>Дата окончания</th>
+                    <th>Комментарии</th>
+                    <th>Добавить комментарий</th>
+                    <th>Удалить задачу</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks.owner_tasks %}
+                <tr>
+                    <td>{{ task.title }}</td>
+                    <td>{{ task.description }}</td>
+                    <td>{{ task.start_date }}</td>
+                    <td>{{ task.end_date }}</td>
+
+                    <!-- Комментарии -->
+                    <td>
+                        {% if task.comments %}
+                            <ul style="padding-left: 20px;">
+                                {% for comment in task.comments %}
+                                    <li>
+                                        <strong>{{ comment.author_id }}:</strong> {{ comment.description }}
+                                        {% if comment.author_id == user.id %}
+                                            <form action="/delete-comment" method="post" style="display:inline;">
+                                                <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                                <input type="hidden" name="task_id" value="{{ task.id }}">
+                                                <button type="submit" style="color: red; background: none; border: none; cursor: pointer;">✖</button>
+                                            </form>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <em>Нет комментариев</em>
+                        {% endif %}
+                    </td>
+
+                    <!-- Форма добавления комментария -->
+                    <td>
+                        <form action="/add-comment" method="post">
+                            <input type="hidden" name="task_id" value="{{ task.id }}">
+                            <textarea name="description" rows="2" cols="25" placeholder="Новый комментарий..." required></textarea><br>
+                            <button type="submit">Добавить</button>
+                        </form>
+                    </td>
+
+                    <!-- Удаление задачи -->
+                    <td>
+                        <form action="/delete-task" method="post" onsubmit="return confirm('Удалить задачу?');">
+                            <input type="hidden" name="task_id" value="{{ task.id }}">
+                            <button type="submit" style="color: red;">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У вас нет выданных задач.</p>
+    {% endif %}
+</section>
+
+
+<section id="assigned-tasks">
+    <h3>Задачи, которые мне назначены</h3>
+    {% if tasks.assigned_tasks %}
+        <table>
+            <tr>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Статус</th>
+                <th>Комментарии</th>
+                <th>Добавить комментарий</th>
+                <th>Изменить статус</th>
+            </tr>
+            {% for task in tasks.assigned_tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.description }}</td>
+
+                <!-- Статус -->
+                <td>{{ task.status }}</td>
+
+                <!-- Комментарии -->
+                <td>
+                    {% if task.comments %}
+                        <ul>
+                        {% for comment in task.comments %}
+                            <li><strong>{{ comment.author_id }}:</strong> {{ comment.description }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>Нет комментариев</p>
+                    {% endif %}
+                </td>
+
+                <!-- Добавление комментария -->
+                <td>
+                    <form action="/add-comment" method="post">
+                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                        <textarea name="description" rows="2" cols="20" required></textarea><br>
+                        <button type="submit">Добавить</button>
+                    </form>
+                </td>
+
+                <!-- Изменение статуса -->
+                <td>
+                    <form action="/change-task-status" method="post">
+                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                        <select name="status">
+                            <option value="todo" {% if task.status == "todo" %}selected{% endif %}>Ожидает</option>
+                            <option value="in_progress" {% if task.status == "in_progress" %}selected{% endif %}>В работе</option>
+                            <option value="done" {% if task.status == "done" %}selected{% endif %}>Завершено</option>
+                        </select>
+                        <button type="submit">Сменить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Нет назначенных задач.</p>
+    {% endif %}
+</section>
+<section id="tasks">
+    <h3>Выданные задачи</h3>
+    {% if tasks.owner_tasks %}
+        <ul>
+        {% for task in tasks.owner_tasks %}
+            <li>
+                <strong>{{ task.title }}</strong> ({{ task.start_date }} - {{ task.end_date }})
+                <form action="/delete-task" method="post" style="display:inline;">
+                    <input type="hidden" name="task_id" value="{{ task.id }}">
+                    <button type="submit" style="color:red;">Удалить</button>
+                </form>
+                <form action="/edit-task-form" method="get" style="display:inline;">
+                    <input type="hidden" name="task_id" value="{{ task.id }}">
+                    <button type="submit">Изменить</button>
+                </form>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Вы не выдали ни одной задачи.</p>
+    {% endif %}
+</section>
+
+{% if edit_task %}
+<section id="edit-task">
+    <h3>Редактировать задачу</h3>
+    <form action="/edit-task/{{ edit_task.id }}" method="post">
+        <input type="text" name="title" value="{{ edit_task.title }}" required><br>
+        <input type="date" name="start_date" value="{{ edit_task.start_date }}"><br>
+        <input type="date" name="end_date" value="{{ edit_task.end_date }}"><br>
+        <textarea name="description" required>{{ edit_task.description }}</textarea><br>
+        <select name="status">
+            <option value="todo" {% if edit_task.status == "pending" %}selected{% endif %}>Ожидает</option>
+            <option value="in_progress" {% if edit_task.status == "in_progress" %}selected{% endif %}>В работе</option>
+            <option value="done" {% if edit_task.status == "done" %}selected{% endif %}>Выполнена</option>
+        </select><br>
+        <button type="submit">Сохранить изменения</button>
+    </form>
+</section>
+{% endif %}
+
+<section id="my-tasks">
+    <h3>Выданные задачи</h3>
+    {% if tasks.owner_tasks %}
+        <table>
+            <tr>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Дата начала</th>
+                <th>Дата окончания</th>
+                <th>Статус</th>
+                <th>Оценка</th>
+            </tr>
+            {% for task in tasks.owner_tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.description }}</td>
+                <td>{{ task.start_date }}</td>
+                <td>{{ task.end_date }}</td>
+                <td>{{ task.status }}</td>
+                <td>
+                    {% if task.status.value == 'done' %}
+                        <form action="/rate-task" method="post">
+                            <input type="hidden" name="task_id" value="{{ task.id }}">
+                            <input type="number" name="score_date" min="1" max="10" placeholder="Дедлайн" required>
+                            <input type="number" name="score_quality" min="1" max="10" placeholder="Качество" required>
+                            <input type="number" name="score_complete" min="1" max="10" placeholder="Полнота" required>
+                            <button type="submit">Оценить</button>
+                        </form>
+                    {% else %}
+                        <em>Оценка недоступна</em>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Вы не выдали ни одной задачи.</p>
+    {% endif %}
+</section>
+<section id="news">
+    <h3>Новости компании</h3>
+
+    {% if news %}
+        <ul>
+            {% for n in news %}
+                <li>
+                    <strong>{{ n.title }}</strong>: {{ n.description }}
+
+                    {% if profile.company_role.name in ["admin", "manager"] %}
+                        <form action="/delete-news" method="post" style="display:inline;">
+                            <input type="hidden" name="news_id" value="{{ n.id }}">
+                            <input type="hidden" name="company_id" value="{{ n.company_id }}">
+                            <button type="submit" style="color:red;">Удалить</button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Нет новостей для отображения.</p>
+    {% endif %}
+
+    {% if profile.company_role.name in ["admin", "manager"] %}
+        <h3>Создать новость</h3>
+        <form action="/create-news" method="post">
+            <input type="text" name="title" placeholder="Заголовок" required><br>
+            <textarea name="description" placeholder="Описание" rows="4" cols="50" required></textarea><br>
+            <button type="submit">Опубликовать</button>
+        </form>
+    {% endif %}
+
+    {% if news_error %}
+        <p style="color: red;">{{ news_error }}</p>
+    {% endif %}
+</section>
+
+<section id="meetings">
+    <h3>Создать встречу</h3>
+    {% if profile.company_role.name in ["admin", "manager"] %}
+    <form action="/create-meeting" method="post">
+        <input type="text" name="title" placeholder="Заголовок встречи" required><br>
+        <textarea name="description" placeholder="Описание" required></textarea><br>
+        <input type="date" name="meeting_date" required><br>
+        <input type="time" name="meeting_time" required><br>
+        <button type="submit">Создать встречу</button>
+    </form>
+    {% endif %}
+
+    {% if meetings %}
+        <h4>Запланированные встречи</h4>
+        <ul>
+            {% for m in meetings %}
+                <li>
+                    <strong>{{ m.title }}</strong> — {{ m.description }}<br>
+                    Дата: {{ m.meeting_date }} | Время: {{ m.meeting_time }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Нет запланированных встреч.</p>
+    {% endif %}
+
+    {% if meeting_error %}
+        <p style="color:red;">{{ meeting_error }}</p>
+    {% endif %}
+</section>
+
+<section id="owner-meetings">
+    <h3>Мои встречи</h3>
+
+    {% if owner_meetings %}
+        <ul>
+            {% for m in owner_meetings %}
+                <li>
+                    <strong>{{ m.title }}</strong> — {{ m.description }}<br>
+                    Дата: {{ m.meeting_date }} | Время: {{ m.meeting_time }}
+
+                    {% if profile.company_role.name in ["admin", "manager"] %}
+                        <!-- Удаление встречи -->
+                        <form action="/delete-meeting" method="post" style="display:inline;" onsubmit="return confirm('Удалить встречу?');">
+                            <input type="hidden" name="meeting_id" value="{{ m.id }}">
+                            <button type="submit" style="color:red;">Удалить</button>
+                        </form>
+
+                        <!-- Форма изменения встречи -->
+                        <form action="/change-meeting" method="post" style="margin-top: 10px;">
+                            <input type="hidden" name="meeting_id" value="{{ m.id }}">
+                            <input type="text" name="title" placeholder="Новое название"><br>
+                            <input type="text" name="description" placeholder="Новое описание"><br>
+                            <input type="date" name="meeting_date"><br>
+                            <input type="time" name="meeting_time"><br>
+                            <button type="submit">Изменить</button>
+                        </form>
+
+                        <tr>
+                            <td colspan="5">
+                                <form action="/add-meeting-user" method="post">
+                                    <input type="hidden" name="meeting_id" value="{{ m.id }}">
+                                    <label>Добавить участника:</label>
+                                    <select name="user_id" required>
+                                        {% for u in users %}
+                                            {% if u.id != user.id %}
+                                                <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} (ID: {{ u.id }})</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit">Добавить</button>
+                                </form>
+                            </td>
+                        </tr>
+
+                    {% endif %}
+                </li>
+                <hr>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Вы не создали ни одной встречи.</p>
+    {% endif %}
+</section>
+
+
+<section id="rating">
+    <h3>Мои оценки</h3>
+    {% if ratings %}
+        <table>
+            <tr>
+                <th>ID задачи</th>
+                <th>Оценщик</th>
+                <th>Дедлайн</th>
+                <th>Качество</th>
+                <th>Полнота</th>
+                <th>Дата</th>
+            </tr>
+            {% for r in ratings %}
+            <tr>
+                <td>{{ r.task_id }}</td>
+                <td>{{ r.head_id }}</td>
+                <td>{{ r.score_date }}</td>
+                <td>{{ r.score_quality }}</td>
+                <td>{{ r.score_complete }}</td>
+                <td>{{ r.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Оценок пока нет.</p>
+    {% endif %}
+
+     {% if avg %}
+        <h4>Средние оценки (за текущий квартал)</h4>
+        <ul>
+            <li><strong>Дедлайн:</strong> {{ avg.avg_date or "—" }}</li>
+            <li><strong>Качество:</strong> {{ avg.avg_quality or "—" }}</li>
+            <li><strong>Полнота:</strong> {{ avg.avg_complete or "—" }}</li>
+        </ul>
+    {% endif %}
+</section>
+<section id="calendar">
+    <h3>Мой календарь</h3>
+
+    <form method="get" action="/calendar" style="margin-bottom: 10px;">
+        <label for="day">Выбрать день:</label>
+        <input type="number" id="day" name="day" min="1" max="31" required>
+        <button type="submit">Показать</button>
+    </form>
+
+    {% if calendar_day %}
+        <h4>События на {{ selected_day }} число:</h4>
+        {% if calendar_day %}
+            <ul>
+                {% for event in calendar_day %}
+                    <li>
+                        <strong>{{ event.title }}</strong> — {{ event.type_event.value }} в {{ event.event_time }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>На этот день нет событий.</p>
+        {% endif %}
+    {% endif %}
+
+    {% if calendar_error %}
+        <p style="color: red;">{{ calendar_error }}</p>
+    {% endif %}
+</section>
+
+<section id="calendar-month">
+    <h3>Месячное расписание</h3>
+
+    <form method="get" action="/calendar-month" style="margin-bottom: 10px;">
+        <label for="year">Год:</label>
+        <input type="number" id="year" name="year" min="2000" max="2100" required>
+        <label for="month">Месяц:</label>
+        <input type="number" id="month" name="month" min="1" max="12" required>
+        <button type="submit">Показать</button>
+    </form>
+
+    {% if calendar_month %}
+        <ul>
+            {% for event in calendar_month %}
+                <li>
+                    <strong>{{ event.title }}</strong> — {{ event.type_event.value }}:
+                    {{ event.event_date }} в {{ event.event_time }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% elif selected_month %}
+        <p>Нет событий за {{ selected_month }}.{{ selected_year }}.</p>
+    {% endif %}
+
+    {% if calendar_month_error %}
+        <p style="color:red;">{{ calendar_month_error }}</p>
+    {% endif %}
+</section>
+
+
+
+{% endif %}
+
+</body>
+</html>
